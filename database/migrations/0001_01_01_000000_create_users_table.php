@@ -11,12 +11,27 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
+         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('username')->unique();
             $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
+            $table->string('phone')->unique();
             $table->string('password');
+
+            // OTP verification
+            $table->string('email_verification_code')->nullable();
+            $table->timestamp('email_verified_at')->nullable();
+
+            // Forgot password
+            $table->string('reset_code')->nullable();
+            $table->timestamp('reset_code_expired_at')->nullable();
+
+            $table->string('avatar')->nullable();
+
+            $table->unsignedBigInteger('role_id')->default(2);
+            $table->foreign('role_id')->references('id')->on('roles')->onDelete('cascade');
+
             $table->rememberToken();
             $table->timestamps();
         });
