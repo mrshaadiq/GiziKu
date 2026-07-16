@@ -97,10 +97,12 @@
                     <template x-for="(q, idx) in getQuestions()" :key="q.id">
                         <div class="space-y-3 p-3 bg-black/10 border border-[var(--border)]/40 rounded-xl">
                             <p class="text-sm font-semibold text-white">
-                                <span x-text="(idx + 1) + '. '"></span x-text>
+                                <span x-text="(idx + 1) + '. '"></span>
                                 <span x-text="q.text"></span>
                             </p>
-                            <div class="grid grid-cols-3 gap-2">
+                            
+                            <!-- Case 1: Standard Options -->
+                            <div x-show="q.type !== 'text'" class="grid grid-cols-3 gap-2">
                                 <button @click="answers[q.key] = 'sering'" :class="answers[q.key] === 'sering' ? 'border-[var(--php)] bg-[var(--php)]/10 text-white font-semibold' : 'border-[var(--border)] bg-[var(--bg3)] text-[var(--text2)]'" class="py-2 text-xs rounded-lg border hover:border-[var(--php)] transition-all">
                                     Ya, sering
                                 </button>
@@ -110,6 +112,11 @@
                                 <button @click="answers[q.key] = 'jarang'" :class="answers[q.key] === 'jarang' ? 'border-[var(--php)] bg-[var(--php)]/10 text-white font-semibold' : 'border-[var(--border)] bg-[var(--bg3)] text-[var(--text2)]'" class="py-2 text-xs rounded-lg border hover:border-[var(--php)] transition-all">
                                     Jarang / Tidak
                                 </button>
+                            </div>
+
+                            <!-- Case 2: Open-ended Notes -->
+                            <div x-show="q.type === 'text'" class="mt-2">
+                                <textarea x-model="answers[q.key]" placeholder="Ketik catatan keluhan detail, kebiasaan buruk anak, atau riwayat perubahan perilaku secara spesifik di sini..." class="w-full h-24 p-3 bg-[var(--bg3)] text-white text-xs border border-[var(--border)] rounded-lg focus:outline-none focus:border-[var(--cyan)] transition-all resize-none"></textarea>
                             </div>
                         </div>
                     </template>
@@ -631,50 +638,63 @@
                 const age = parseInt(this.patient.age) || 0;
                 if (age >= 1 && age <= 3) {
                     return [
-                        { id: 'q1', text: 'Apakah anak sering mengalami tantrum hebat atau rewel berlebihan?', key: 'tantrum' },
-                        { id: 'q2', text: 'Apakah anak menunjukkan tanda kemunduran perilaku (seperti mengompol lagi)?', key: 'regresi' },
-                        { id: 'q3', text: 'Apakah anak memiliki kebiasaan mengisap jempol atau menggigit kuku?', key: 'isap_jempol' },
-                        { id: 'q4', text: 'Apakah anak sulit ditenangkan saat berpisah dari orang tua?', key: 'separation' },
-                        { id: 'q5', text: 'Apakah pola tidur anak tidak teratur (sulit tidur malam)?', key: 'sleep_dist' },
-                        { id: 'q6', text: 'Apakah anak menolak makan secara tidak biasa (GTM berlebihan)?', key: 'eating_issue' }
+                        { id: 'q1', text: 'Apakah anak Anda sering mengalami tantrum hebat atau rewel berlebihan?', key: 'tantrum' },
+                        { id: 'q2', text: 'Apakah anak Anda menunjukkan tanda kemunduran perilaku (seperti mengompol lagi atau mogok bicara)?', key: 'regresi' },
+                        { id: 'q3', text: 'Apakah anak Anda memiliki kebiasaan mengisap jempol, menggigit kuku, atau membenturkan kepala?', key: 'isap_jempol' },
+                        { id: 'q4', text: 'Apakah anak Anda sulit ditenangkan saat berpisah dari orang tua atau pengasuh?', key: 'separation' },
+                        { id: 'q5', text: 'Apakah pola tidur anak Anda tidak teratur (sering terbangun malam atau sulit tidur)?', key: 'sleep_dist' },
+                        { id: 'q6', text: 'Apakah anak Anda menolak makan secara tidak biasa (GTM berlebihan/pilih-pilih makanan ekstrem)?', key: 'eating_issue' },
+                        { id: 'q7', text: 'Catatan tambahan orang tua mengenai kondisi perilaku atau kebiasaan balita Anda (opsional):', key: 'catatan_orang_tua', type: 'text' }
                     ];
                 } else if (age >= 4 && age <= 6) {
                     return [
-                        { id: 'q1', text: 'Apakah anak sering mengeluh takut berlebihan (misal takut gelap/sendiri)?', key: 'fear' },
-                        { id: 'q2', text: 'Apakah anak sering mengisolasi diri atau menolak bermain dengan teman?', key: 'social_withdraw' },
-                        { id: 'q3', text: 'Apakah anak mengalami mimpi buruk berulang secara intens?', key: 'nightmare' },
-                        { id: 'q4', text: 'Apakah anak sering menggigit kuku atau mengorek kulit saat cemas?', key: 'nail_biting' },
-                        { id: 'q5', text: 'Apakah anak tampak cemas berlebihan saat ditinggal sebentar?', key: 'separation_anxiety' },
-                        { id: 'q6', text: 'Apakah anak sering mengeluh sakit perut atau pusing tanpa sebab medis?', key: 'somatic' }
+                        { id: 'q1', text: 'Apakah anak Anda sering mengeluh takut berlebihan (misal takut gelap, sendiri, atau monster)?', key: 'fear' },
+                        { id: 'q2', text: 'Apakah anak Anda sering menarik diri dari interaksi keluarga atau menolak bermain dengan teman sebaya?', key: 'social_withdraw' },
+                        { id: 'q3', text: 'Apakah anak Anda sering mengalami mimpi buruk berulang secara intens pada malam hari?', key: 'nightmare' },
+                        { id: 'q4', text: 'Apakah anak Anda memiliki kebiasaan menggigit kuku atau mengorek kulit saat merasa cemas?', key: 'nail_biting' },
+                        { id: 'q5', text: 'Apakah anak Anda tampak cemas, panik, atau menangis berlebihan saat ditinggal sebentar oleh orang tua?', key: 'separation_anxiety' },
+                        { id: 'q6', text: 'Apakah anak Anda sering mengeluh sakit perut atau pusing tanpa adanya sebab medis yang jelas?', key: 'somatic' },
+                        { id: 'q7', text: 'Catatan tambahan orang tua mengenai kondisi perilaku atau kebiasaan anak prasekolah Anda (opsional):', key: 'catatan_orang_tua', type: 'text' }
                     ];
                 } else if (age >= 7 && age <= 12) {
                     return [
-                        { id: 'q1', text: 'Apakah anak menunjukkan penurunan performa akademis atau malas sekolah mendadak?', key: 'school_issue' },
-                        { id: 'q2', text: 'Apakah anak tampak mudah tersinggung, lekas marah, atau sensitif?', key: 'irritability' },
-                        { id: 'q3', text: 'Apakah anak sering cemas berlebihan mengenai nilai sekolah atau ujian?', key: 'academic_stress' },
-                        { id: 'q4', text: 'Apakah anak memiliki kebiasaan menggigit kuku atau mengetuk-ngetuk jari saat tegang?', key: 'nervous_habit' },
-                        { id: 'q5', text: 'Apakah anak sering mengeluh lelah atau tidak bersemangat beraktivitas?', key: 'fatigue' },
-                        { id: 'q6', text: 'Apakah anak mengalami kesulitan tidur atau sering terbangun malam?', key: 'insomnia' }
+                        { id: 'q1', text: 'Apakah anak Anda menunjukkan penurunan performa belajar atau menolak bersekolah secara tiba-tiba?', key: 'school_issue' },
+                        { id: 'q2', text: 'Apakah anak Anda tampak mudah tersinggung, lekas marah, atau bertindak agresif/membangkang?', key: 'irritability' },
+                        { id: 'q3', text: 'Apakah anak Anda sering cemas atau takut berlebihan mengenai nilai sekolah, ujian, atau pertemanan?', key: 'academic_stress' },
+                        { id: 'q4', text: 'Apakah anak Anda memiliki kebiasaan menggigit kuku, melamun berlebihan, atau memutar-mutar rambut saat tegang?', key: 'nervous_habit' },
+                        { id: 'q5', text: 'Apakah anak Anda sering mengeluh lelah, lesu, atau terlihat tidak bersemangat untuk bermain?', key: 'fatigue' },
+                        { id: 'q6', text: 'Apakah anak Anda mengalami kesulitan tidur, sering begadang, atau mengantuk berlebihan di siang hari?', key: 'insomnia' },
+                        { id: 'q7', text: 'Catatan tambahan orang tua mengenai kondisi perilaku atau kebiasaan anak sekolah Anda (opsional):', key: 'catatan_orang_tua', type: 'text' }
                     ];
                 } else {
                     return [
-                        { id: 'q1', text: 'Apakah Anda tampak murung, sedih, atau merasa hampa sepanjang hari?', key: 'depression' },
-                        { id: 'q2', text: 'Apakah Anda menarik diri dari pergaulan teman dan keluarga secara drastis?', key: 'withdraw' },
-                        { id: 'q3', text: 'Apakah ada tanda kelelahan ekstrem/burnout akibat tekanan akademis/sosial?', key: 'burnout' },
-                        { id: 'q4', text: 'Apakah Anda memiliki kebiasaan menggigit kuku atau melukai diri saat tertekan?', key: 'anxiety_habit' },
-                        { id: 'q5', text: 'Apakah Anda mengalami insomnia parah (sering begadang/tidur larut)?', key: 'insomnia' },
-                        { id: 'q6', text: 'Apakah Anda merasa tidak peduli dengan penampilan atau kebersihan diri?', key: 'self_neglect' }
+                        { id: 'q1', text: 'Apakah anak/pasien Anda tampak murung, sedih, atau merasa hampa hampir sepanjang hari?', key: 'depression' },
+                        { id: 'q2', text: 'Apakah anak/pasien Anda menarik diri dari pergaulan teman dan keluarga secara drastis (mengurung diri di kamar)?', key: 'withdraw' },
+                        { id: 'q3', text: 'Apakah anak/pasien Anda menunjukkan kelelahan ekstrem (burnout), hilangnya minat hobi, atau lemas terus-merus?', key: 'burnout' },
+                        { id: 'q4', text: 'Apakah anak/pasien Anda memiliki kebiasaan menggigit kuku, menarik rambut, atau melukai diri saat tertekan?', key: 'anxiety_habit' },
+                        { id: 'q5', text: 'Apakah anak/pasien Anda mengalami gangguan tidur parah (insomnia berat, begadang sepanjang malam)?', key: 'insomnia' },
+                        { id: 'q6', text: 'Apakah anak/pasien Anda terlihat tidak mempedulikan penampilan, kebersihan tubuh, atau perawatan dirinya?', key: 'self_neglect' },
+                        { id: 'q7', text: 'Catatan tambahan orang tua mengenai kondisi perilaku atau kebiasaan remaja/dewasa Anda (opsional):', key: 'catatan_orang_tua', type: 'text' }
                     ];
                 }
             },
 
             answersComplete() {
                 const currentQs = this.getQuestions();
-                return currentQs.every(q => this.answers[q.key]);
+                return currentQs.every(q => {
+                    if (q.type === 'text') return true;
+                    return this.answers[q.key];
+                });
             },
 
             resetAnswers() {
                 this.answers = {};
+                const currentQs = this.getQuestions();
+                currentQs.forEach(q => {
+                    if (q.type === 'text') {
+                        this.answers[q.key] = '';
+                    }
+                });
             },
 
             switchScanArea(area) {

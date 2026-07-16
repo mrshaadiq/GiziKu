@@ -218,6 +218,78 @@
         {{ $laporan['ringkasan_pengguna'] ?? $laporan['ringkasan_orang_tua'] ?? $scan->analisis_gabungan }}
     </div>
 
+    <!-- Hasil Observasi Orang Tua (Kuesioner) -->
+    <div class="section-title">Hasil Observasi Orang Tua (Kuesioner)</div>
+    <table class="grid-table">
+        <thead>
+            <tr>
+                <th style="width: 70%;">Indikator Perilaku yang Diamati</th>
+                <th style="width: 30%;">Kondisi</th>
+            </tr>
+        </thead>
+        <tbody>
+            @php
+                $questionsList = [];
+                $age = $scan->usia_pasien;
+                if ($age >= 1 && $age <= 3) {
+                    $questionsList = [
+                        'tantrum' => 'Mengalami tantrum hebat / rewel berlebihan',
+                        'regresi' => 'Menunjukkan kemunduran perilaku (ompol/mogok bicara)',
+                        'isap_jempol' => 'Mengisap jempol / gigit kuku / bentur kepala',
+                        'separation' => 'Sulit ditenangkan saat berpisah dari orang tua',
+                        'sleep_dist' => 'Pola tidur tidak teratur / sering terbangun',
+                        'eating_issue' => 'Menolak makan / GTM berlebihan'
+                    ];
+                } elseif ($age >= 4 && $age <= 6) {
+                    $questionsList = [
+                        'fear' => 'Mengeluh takut berlebihan (gelap/monster)',
+                        'social_withdraw' => 'Menarik diri / menolak bermain dengan teman',
+                        'nightmare' => 'Mengalami mimpi buruk berulang secara intens',
+                        'nail_biting' => 'Menggigit kuku / mengorek kulit saat cemas',
+                        'separation_anxiety' => 'Cemas / menangis saat ditinggal orang tua',
+                        'somatic' => 'Mengeluh sakit perut / pusing tanpa sebab medis'
+                    ];
+                } elseif ($age >= 7 && $age <= 12) {
+                    $questionsList = [
+                        'school_issue' => 'Penurunan performa belajar / malas sekolah mendadak',
+                        'irritability' => 'Mudah tersinggung, lekas marah / agresif',
+                        'academic_stress' => 'Cemas berlebihan tentang nilai/sekolah/teman',
+                        'nervous_habit' => 'Kebiasaan gigit kuku / melamun / putar rambut',
+                        'fatigue' => 'Mengeluh lelah, lesu / tidak bersemangat',
+                        'insomnia' => 'Kesulitan tidur / begadang / ngantuk siang hari'
+                    ];
+                } else {
+                    $questionsList = [
+                        'depression' => 'Tampak murung, sedih, merasa hampa',
+                        'withdraw' => 'Menarik diri dari pergaulan teman/keluarga',
+                        'burnout' => 'Kelelahan ekstrem (burnout) / lemas terus-menerus',
+                        'anxiety_habit' => 'Kebiasaan gigit kuku / melukai diri saat tertekan',
+                        'insomnia' => 'Gangguan tidur parah (insomnia berat/begadang)',
+                        'self_neglect' => 'Tidak peduli penampilan / kebersihan diri'
+                    ];
+                }
+            @endphp
+            @foreach($questionsList as $key => $label)
+                @if(isset($scan->jawaban_kuesioner[$key]))
+                    <tr>
+                        <td>{{ $label }}</td>
+                        <td style="font-weight: bold; text-transform: capitalize; color: {{ $scan->jawaban_kuesioner[$key] === 'sering' ? '#ef4444' : ($scan->jawaban_kuesioner[$key] === 'kadang' ? '#eab308' : '#10b981') }};">
+                            {{ $scan->jawaban_kuesioner[$key] === 'sering' ? 'Ya, Sering' : ($scan->jawaban_kuesioner[$key] === 'kadang' ? 'Kadang-kadang' : 'Jarang / Tidak') }}
+                        </td>
+                    </tr>
+                @endif
+            @endforeach
+            @if(!empty($scan->jawaban_kuesioner['catatan_orang_tua']))
+                <tr>
+                    <td colspan="2" style="background-color: #f8fafc; border-top: 2px solid #cbd5e1;">
+                        <strong>Catatan Tambahan Orang Tua:</strong><br>
+                        <span style="font-style: italic; color: #475569;">"{{ $scan->jawaban_kuesioner['catatan_orang_tua'] }}"</span>
+                    </td>
+                </tr>
+            @endif
+        </tbody>
+    </table>
+
     <!-- Hasil Kondisi Mental -->
     <div class="section-title">Kondisi Mental Terindikasi</div>
     <table class="grid-table">
