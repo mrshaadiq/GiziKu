@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('nama_pasien')->nullable();
             $table->integer('usia_pasien')->nullable(); // in years/months
+            $table->date('tanggal_lahir')->nullable();
             $table->string('jenis_kelamin')->nullable(); // L/P
 
             // Photo paths

@@ -59,28 +59,35 @@ class MentalHealthScanService
             'kuku' => $fotoKuku,
         ];
 
+        $usiaPasien = $patientData['usia_pasien'] ?? null;
+
+        $imagesData = [];
         foreach ($photos as $bagian => $file) {
             if ($file !== null) {
                 // Store the photo
                 $path = $file->store("mental_scans/{$bagian}", 'public');
                 $storedPaths[$bagian] = $path;
 
-                // Analyze with Gemini Vision
-                $base64   = base64_encode(file_get_contents($file->getRealPath()));
-                $mimeType = $file->getMimeType();
-                $result   = $this->gemini->analyzeImageStructured($base64, $mimeType, $bagian);
+                $imagesData[$bagian] = [
+                    'base64' => base64_encode(file_get_contents($file->getRealPath())),
+                    'mime'   => $file->getMimeType(),
+                ];
+            }
+        }
 
-                $analyses[$bagian]   = $result;
-                $confidences[$bagian] = $result['confidence_score'] ?? null;
+        // Analyze all active photos concurrently via HTTP Pool
+        $analyses = $this->gemini->analyzeImagesParallel($imagesData, $usiaPasien);
 
-                if (!empty($result['temuan_visual'])) {
-                    foreach ($result['temuan_visual'] as $temuan) {
-                        $highlights[] = [
-                            'area'      => $bagian,
-                            'tanda'     => $temuan['tanda'] ?? '',
-                            'highlight' => $temuan['area_highlight'] ?? '',
-                        ];
-                    }
+        foreach ($analyses as $bagian => $result) {
+            $confidences[$bagian] = $result['confidence_score'] ?? null;
+
+            if (!empty($result['temuan_visual'])) {
+                foreach ($result['temuan_visual'] as $temuan) {
+                    $highlights[] = [
+                        'area'      => $bagian,
+                        'tanda'     => $temuan['tanda'] ?? '',
+                        'highlight' => $temuan['area_highlight'] ?? '',
+                    ];
                 }
             }
         }
@@ -90,7 +97,8 @@ class MentalHealthScanService
             $analyses['muka'] ?? [],
             $analyses['mata'] ?? [],
             $analyses['kuku'] ?? [],
-            $kuesioner
+            $kuesioner,
+            $usiaPasien
         );
 
         $levelRisiko = $combinedReport['level_risiko'] ?? 'sedang';
@@ -133,6 +141,7 @@ class MentalHealthScanService
         $record = MentalHealthScan::create([
             'nama_pasien'          => $patientData['nama_pasien'] ?? null,
             'usia_pasien'          => $patientData['usia_pasien'] ?? null,
+            'tanggal_lahir'        => $patientData['tanggal_lahir'] ?? null,
             'jenis_kelamin'        => $patientData['jenis_kelamin'] ?? null,
             'foto_muka'            => $storedPaths['muka'] ?? null,
             'foto_mata'            => $storedPaths['mata'] ?? null,

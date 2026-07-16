@@ -21,7 +21,8 @@ class MentalHealthScanController extends Controller
      */
     public function index()
     {
-        return view('user.mental-scan');
+        $history = MentalHealthScan::orderBy('created_at', 'desc')->get();
+        return view('user.mental-scan', compact('history'));
     }
 
     /**
@@ -67,6 +68,7 @@ class MentalHealthScanController extends Controller
         $request->validate([
             'nama_pasien'         => 'required|string|max:100',
             'usia_pasien'         => 'required|integer|min:0|max:120', // in years
+            'tanggal_lahir'       => 'nullable|date',
             'jenis_kelamin'       => 'required|in:L,P',
             'foto_muka'           => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
             'foto_mata'           => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
@@ -84,6 +86,7 @@ class MentalHealthScanController extends Controller
                 [
                     'nama_pasien'   => $request->nama_pasien,
                     'usia_pasien'   => $request->usia_pasien,
+                    'tanggal_lahir' => $request->tanggal_lahir,
                     'jenis_kelamin' => $request->jenis_kelamin,
                 ],
                 $request->previous_session_id
@@ -161,5 +164,26 @@ class MentalHealthScanController extends Controller
             'success' => true,
             'records' => $records
         ]);
+    }
+
+    /**
+     * Download clinical PDF report
+     */
+    public function downloadPdf($id)
+    {
+        $scan = MentalHealthScan::findOrFail($id);
+        
+        $laporan = [];
+        if ($scan->analisis_gabungan_ai) {
+            $laporan = json_decode($scan->analisis_gabungan_ai, true);
+        }
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('user.pdf-report', [
+            'scan' => $scan,
+            'laporan' => $laporan
+        ]);
+
+        $safeName = str_replace(' ', '_', $scan->nama_pasien);
+        return $pdf->download("Laporan_Mental_Scan_{$safeName}_{$scan->created_at->format('Ymd_His')}.pdf");
     }
 }

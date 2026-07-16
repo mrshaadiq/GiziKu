@@ -9,6 +9,7 @@ class MentalHealthScan extends Model
     protected $fillable = [
         'nama_pasien',
         'usia_pasien',
+        'tanggal_lahir',
         'jenis_kelamin',
         'foto_muka',
         'foto_mata',

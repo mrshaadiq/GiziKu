@@ -175,7 +175,7 @@ class GeminiService
      * Analyze a photo (base64) for mental health signs
      * $bagian: 'muka' | 'mata' | 'kuku'
      */
-    public function analyzeImageStructured(string $base64Image, string $mimeType, string $bagian): ?array
+    public function analyzeImageStructured(string $base64Image, string $mimeType, string $bagian, ?int $usiaPasien = null): ?array
     {
         if (empty($this->apiKey)) {
             return ['error' => 'GEMINI_API_KEY belum diatur.'];
@@ -187,7 +187,10 @@ class GeminiService
             'kuku' => "Kamu adalah psikolog klinis dan pakar gangguan anxietas AI. Analisis foto KUKU orang ini untuk mendeteksi tanda-tanda stres fisik dan psikologis. Perhatikan: kuku digigit/cacat (onychophagia/indikasi anxietas/kebiasaan stres), kuku tidak terawat/kotor (self-neglect/indikasi depresi klinis), garis melintang/garis Beau (stres psikologis berat beberapa bulan lalu).",
         ];
 
+        $agePrompt = $usiaPasien ? "\n\nINFORMASI USIA PASIEN: Pasien berumur {$usiaPasien} tahun. Harap sesuaikan interpretasi Anda dengan usia perkembangan ini (stres/tantrum pada balita 1-3 th, cemas perpisahan/regresi pada prasekolah 4-6 th, kecemasan sekolah/gangguan konsentrasi/gigit kuku pada anak sekolah 7-12 th, burnout akademis/depresi/insomnia/self-neglect pada remaja 13-18 th, stres/burnout kerja pada dewasa).\n" : "";
+
         $systemPrompt = ($bagianPrompts[$bagian] ?? "Analisis foto ini untuk tanda stres dan kesehatan mental.")
+            . $agePrompt
             . "\n\nINSTRUKSI PENTING:\n"
             . "1. Analisis foto dengan teliti, identifikasi tanda visual yang relevan.\n"
             . "2. Tentukan indikasi kondisi mental (stres kronis, anxietas, insomnia, burnout, depresi, self-neglect) dan tingkat keyakinannya.\n"
@@ -370,7 +373,8 @@ PROMPT;
         array $hasilMuka  = [],
         array $hasilMata  = [],
         array $hasilKuku  = [],
-        array $kuesioner  = []
+        array $kuesioner  = [],
+        ?int $usiaPasien = null
     ): ?array {
         $dataGabungan = json_encode([
             'analisis_muka'  => $hasilMuka,
@@ -379,8 +383,11 @@ PROMPT;
             'kuesioner'      => $kuesioner,
         ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
+        $agePrompt = $usiaPasien ? "\n\nINFORMASI USIA PASIEN: Pasien berumur {$usiaPasien} tahun. Sangat penting untuk menyesuaikan diagnosis awal, tingkat keparahan risiko, tindakan preventif, dan metode relaksasi/mindfulness dengan tahapan usia perkembangan psikologis ini.\n" : "";
+
         $systemPrompt = <<<PROMPT
 Kamu adalah psikolog klinis, neuropsikolog, dan ahli kesehatan mental AI. Analisis hasil skrining gabungan dari 3 area tubuh (muka, mata, kuku) serta kuesioner keluhan psikologis pengguna.
+{$agePrompt}
 
 DATA ANALISIS PER AREA & JAWABAN KUESIONER:
 {$dataGabungan}
@@ -470,5 +477,134 @@ PROMPT;
             Log::error('Combined report exception', ['message' => $e->getMessage()]);
             return ['error' => true, 'message' => 'Terjadi kesalahan saat menghasilkan laporan.'];
         }
+    }
+
+    /**
+     * Analyze multiple photos in parallel using HTTP pool.
+     */
+    public function analyzeImagesParallel(array $imagesData, ?int $usiaPasien = null): array
+    {
+        $results = [];
+        $bodies = [];
+
+        $bagianPrompts = [
+            'muka' => "Kamu adalah psikolog klinis dan neuropsikolog AI. Analisis foto MUKA/WAJAH orang ini untuk mendeteksi tanda-tanda stres kronis, kelelahan mental, kecemasan, atau depresi. Perhatikan: kerutan dahi/ekspresi tegang (stres kronis/cortisol tinggi), wajah kusam atau lingkaran hitam bawah mata (insomnia/burnout), otot rahang tegang (anxietas), kurangnya ekspresi (flat affect/depresi).",
+            'mata' => "Kamu adalah psikolog klinis dan pakar gangguan tidur AI. Analisis foto MATA orang ini untuk mendeteksi tanda-tanda stres, kurang tidur (insomnia), depresi, atau kecemasan. Perhatikan: mata merah/iritasi (kurang tidur/lelah), kantung mata hitam/bengkak (kurang tidur kronis/stres tinggi), tatapan layu/kosong (indikasi depresi/kelelahan mental).",
+            'kuku' => "Kamu adalah psikolog klinis dan pakar gangguan anxietas AI. Analisis foto KUKU orang ini untuk mendeteksi tanda-tanda stres fisik dan psikologis. Perhatikan: kuku digigit/cacat (onychophagia/indikasi anxietas/kebiasaan stres), kuku tidak terawat/kotor (self-neglect/indikasi depresi klinis), garis melintang/garis Beau (stres psikologis berat beberapa bulan lalu).",
+        ];
+
+        $agePrompt = $usiaPasien ? "\n\nINFORMASI USIA PASIEN: Pasien berumur {$usiaPasien} tahun. Harap sesuaikan interpretasi Anda dengan usia perkembangan ini (stres/tantrum pada balita 1-3 th, cemas perpisahan/regresi pada prasekolah 4-6 th, kecemasan sekolah/gangguan konsentrasi/gigit kuku pada anak sekolah 7-12 th, burnout akademis/depresi/insomnia/self-neglect pada remaja 13-18 th, stres/burnout kerja pada dewasa).\n" : "";
+
+        $modelName = $this->model;
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/{$modelName}:generateContent?key={$this->apiKey}";
+
+        foreach ($imagesData as $bagian => $data) {
+            if (empty($data['base64'])) continue;
+
+            $systemPrompt = ($bagianPrompts[$bagian] ?? "Analisis foto ini untuk tanda stres.")
+                . $agePrompt
+                . "\n\nINSTRUKSI PENTING:\n"
+                . "1. Analisis foto dengan teliti, identifikasi tanda visual yang relevan.\n"
+                . "2. Tentukan indikasi kondisi mental (stres kronis, anxietas, insomnia, burnout, depresi, self-neglect) dan tingkat keyakinannya.\n"
+                . "3. Jika terindikasi kondisi berat (potensi bahaya diri sendiri, self-neglect ekstrem), tandai perlu_rujuk = true.\n"
+                . "4. Ini adalah SKRINING AWAL berbasis tanda fisik, bukan diagnosis formal.\n\n"
+                . "WAJIB JAWAB DALAM FORMAT JSON BERIKUT (tanpa markdown code block, langsung JSON):\n"
+                . "{\n"
+                . "  \"area\": \"{$bagian}\",\n"
+                . "  \"status\": \"normal\" | \"terindikasi\",\n"
+                . "  \"temuan_visual\": [\n"
+                . "    {\n"
+                . "      \"tanda\": \"nama tanda yang terdeteksi\",\n"
+                . "      \"deskripsi\": \"apa yang terlihat pada foto\",\n"
+                . "      \"area_highlight\": \"deskripsi lokasi pada foto\"\n"
+                . "    }\n"
+                . "  ],\n"
+                . "  \"indikasi_mental\": [\n"
+                . "    {\n"
+                . "      \"kondisi\": \"stres kronis / anxietas / insomnia / burnout / depresi / self-neglect\",\n"
+                . "      \"alasan\": \"alasan singkat berdasarkan tanda visual\",\n"
+                . "      \"keyakinan\": \"rendah\" | \"sedang\" | \"tinggi\"\n"
+                . "    }\n"
+                . "  ],\n"
+                . "  \"confidence_score\": 0.0-1.0,\n"
+                . "  \"perlu_rujuk\": false,\n"
+                . "  \"alasan_rujuk\": \"alasan jika perlu_rujuk true, kosong jika false\",\n"
+                . "  \"penjelasan_awam\": \"penjelasan singkat 1-2 kalimat dalam bahasa sederhana\"\n"
+                . "}";
+
+            $bodies[$bagian] = [
+                'contents' => [[
+                    'role'  => 'user',
+                    'parts' => [
+                        ['text' => "Tolong analisis foto {$bagian} orang ini:"],
+                        [
+                            'inlineData' => [
+                                'mimeType' => $data['mime'],
+                                'data'     => $data['base64'],
+                            ],
+                        ],
+                    ],
+                ]],
+                'systemInstruction' => [
+                    'parts' => [['text' => $systemPrompt]],
+                ],
+                'generationConfig' => [
+                    'temperature'    => 0.05,
+                    'responseMimeType' => 'application/json',
+                ],
+            ];
+        }
+
+        if (empty($bodies)) {
+            return [];
+        }
+
+        Log::info("Gemini: launching HTTP concurrent pool for " . implode(', ', array_keys($bodies)));
+        try {
+            $responses = Http::pool(function (\Illuminate\Http\Client\Pool $pool) use ($url, $bodies) {
+                $requests = [];
+                foreach ($bodies as $bagian => $body) {
+                    $requests[] = $pool->as($bagian)->timeout(90)->post($url, $body);
+                }
+                return $requests;
+            });
+
+            foreach ($bodies as $bagian => $body) {
+                $response = $responses[$bagian] ?? null;
+                if ($response && $response->successful()) {
+                    $rawText = $response->json('candidates.0.content.parts.0.text') ?? '';
+                    $rawText = preg_replace('/^```(?:json)?\s*/i', '', trim($rawText));
+                    $rawText = preg_replace('/\s*```$/', '', $rawText);
+
+                    $parsed = json_decode($rawText, true);
+                    if (json_last_error() === JSON_ERROR_NONE) {
+                        $results[$bagian] = $parsed;
+                    } else {
+                        Log::warning("Gemini: parallel JSON decode error on {$bagian}");
+                        $results[$bagian] = [
+                            'area'             => $bagian,
+                            'status'           => 'terindikasi',
+                            'temuan_visual'    => [],
+                            'indikasi_mental'  => [],
+                            'confidence_score' => 0.5,
+                            'perlu_rujuk'      => false,
+                            'alasan_rujuk'     => '',
+                            'penjelasan_awam'  => $rawText,
+                        ];
+                    }
+                } else {
+                    Log::warning("Gemini: parallel request failed for {$bagian}, falling back to sequential...");
+                    $data = $imagesData[$bagian];
+                    $results[$bagian] = $this->analyzeImageStructured($data['base64'], $data['mime'], $bagian, $usiaPasien);
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error("Gemini: parallel request pool error: " . $e->getMessage() . ", falling back to sequential...");
+            foreach ($imagesData as $bagian => $data) {
+                $results[$bagian] = $this->analyzeImageStructured($data['base64'], $data['mime'], $bagian, $usiaPasien);
+            }
+        }
+
+        return $results;
     }
 }

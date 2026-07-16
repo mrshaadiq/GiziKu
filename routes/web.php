@@ -64,6 +64,7 @@ Route::middleware('auth')->group(function () {
 
     // Mental Health Scanner
     Route::get('/user/mental-scan', [MentalHealthScanController::class, 'index'])->name('user.mental-scan');
+    Route::get('/user/mental-scan/{id}/pdf', [MentalHealthScanController::class, 'downloadPdf'])->name('user.mental-scan.pdf');
     Route::post('/api/mental-scan/analyze-single', [MentalHealthScanController::class, 'analyzeSingle'])->name('api.mental-scan.single');
     Route::post('/api/mental-scan/analyze-full', [MentalHealthScanController::class, 'analyzeFull'])->name('api.mental-scan.full');
     Route::get('/api/mental-scan/{id}', [MentalHealthScanController::class, 'show'])->name('api.mental-scan.show');
