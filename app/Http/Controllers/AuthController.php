@@ -386,11 +386,240 @@ class AuthController extends Controller
         }
 
         Auth::login($user);
-
+ 
         if ($user->isAdmin()) {
             return redirect()->route('admin.dashboard')->with('success', 'Selamat datang Administrator!');
         }
-
+ 
         return redirect()->route('user.dashboard')->with('success', 'Berhasil masuk dengan Google!');
+    }
+
+    public function importStuntingData(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:csv,txt,xlsx',
+            'data_year' => 'required|integer|min:2000|max:2100'
+        ]);
+
+        $file = $request->file('file');
+        $year = $request->input('data_year');
+        $rows = [];
+
+        try {
+            $extension = strtolower($file->getClientOriginalExtension());
+            if ($extension === 'xlsx') {
+                // Parse XLSX using pure PHP ZipArchive with coordinate protection (prevents empty cell shifting)
+                $zip = new \ZipArchive();
+                if ($zip->open($file->getRealPath()) === TRUE) {
+                    $sharedStrings = [];
+                    $xmlStr = $zip->getFromName('xl/sharedStrings.xml');
+                    if ($xmlStr !== false) {
+                        $xml = simplexml_load_string($xmlStr);
+                        foreach ($xml->si as $si) {
+                            $sharedStrings[] = (string)($si->t ?? $si->r->t ?? '');
+                        }
+                    }
+
+                    $sheetStr = $zip->getFromName('xl/worksheets/sheet1.xml');
+                    if ($sheetStr !== false) {
+                        $xml = simplexml_load_string($sheetStr);
+                        foreach ($xml->sheetData->row as $row) {
+                            $rowData = [];
+                            foreach ($row->c as $c) {
+                                $ref = (string)($c['r'] ?? '');
+                                preg_match('/^[A-Z]+/i', $ref, $matches);
+                                $colLetter = $matches[0] ?? '';
+                                if ($colLetter) {
+                                    // Convert column letter to 0-based index
+                                    $colIndex = 0;
+                                    $len = strlen($colLetter);
+                                    for ($k = 0; $k < $len; $k++) {
+                                        $colIndex = $colIndex * 26 + (ord(strtoupper($colLetter[$k])) - 64);
+                                    }
+                                    $colIndex--; // 0-based
+
+                                    $val = (string)($c->v ?? '');
+                                    $type = (string)($c['t'] ?? '');
+                                    if ($type === 's') {
+                                        $cellVal = $sharedStrings[(int)$val] ?? $val;
+                                    } else {
+                                        $cellVal = $val;
+                                    }
+                                    $rowData[$colIndex] = $cellVal;
+                                }
+                            }
+                            // Fill gaps with empty strings to preserve columns mapping
+                            if (!empty($rowData)) {
+                                $maxIndex = max(array_keys($rowData));
+                                for ($idx = 0; $idx <= $maxIndex; $idx++) {
+                                    if (!isset($rowData[$idx])) {
+                                        $rowData[$idx] = '';
+                                    }
+                                }
+                                ksort($rowData);
+                                $rows[] = $rowData;
+                            }
+                        }
+                    } else {
+                        return back()->with('error', 'Gagal membaca sheet1.xml dari file Excel.');
+                    }
+                    $zip->close();
+                } else {
+                    return back()->with('error', 'Gagal membuka file ZIP archive Excel.');
+                }
+            } else {
+                // Parse CSV with auto-detected delimiter
+                $handle = fopen($file->getRealPath(), 'r');
+                if ($handle !== FALSE) {
+                    $firstLine = fgets($handle);
+                    rewind($handle);
+
+                    $separator = ',';
+                    if (strpos($firstLine, ';') !== false && (strpos($firstLine, ',') === false || substr_count($firstLine, ';') > substr_count($firstLine, ','))) {
+                        $separator = ';';
+                    }
+
+                    while (($data = fgetcsv($handle, 4000, $separator)) !== FALSE) {
+                        $rows[] = $data;
+                    }
+                    fclose($handle);
+                } else {
+                    return back()->with('error', 'Gagal membuka file CSV.');
+                }
+            }
+
+            if (empty($rows)) {
+                return back()->with('error', 'File tidak memiliki baris data.');
+            }
+
+            // 1. Find header row and column mapping
+            $headerRowIndex = null;
+            $columnsMapping = [
+                'province_name' => null,
+                'stunting_prevalence' => null,
+                'status' => null,
+                'faskes_access' => null,
+                'urgency_priority' => null,
+            ];
+
+            foreach ($rows as $rowIndex => $row) {
+                $hasProvince = false;
+                $hasOtherHeader = false;
+                foreach ($row as $colIndex => $cellVal) {
+                    $val = trim(strtolower($cellVal));
+                    if ($val === 'provinsi' || $val === 'nama provinsi') {
+                        $hasProvince = true;
+                    }
+                    if (strpos($val, 'stunting') !== false || strpos($val, 'prevalensi') !== false || strpos($val, 'faskes') !== false || strpos($val, 'fasilitas') !== false || $val === 'no') {
+                        $hasOtherHeader = true;
+                    }
+                }
+                if ($hasProvince && $hasOtherHeader) {
+                    $headerRowIndex = $rowIndex;
+                    break;
+                }
+            }
+
+            // If header row found, map actual columns
+            if ($headerRowIndex !== null) {
+                $headerRow = $rows[$headerRowIndex];
+                foreach ($headerRow as $colIndex => $cellVal) {
+                    $val = trim(strtolower($cellVal));
+                    if ($val === 'provinsi' || $val === 'nama provinsi') {
+                        $columnsMapping['province_name'] = $colIndex;
+                    } elseif (strpos($val, 'stunting') !== false || strpos($val, 'prevalensi') !== false) {
+                        $columnsMapping['stunting_prevalence'] = $colIndex;
+                    } elseif (strpos($val, 'status') !== false || strpos($val, 'nasional') !== false) {
+                        $columnsMapping['status'] = $colIndex;
+                    } elseif (strpos($val, 'fasilitas') !== false || strpos($val, 'faskes') !== false || strpos($val, 'akses') !== false) {
+                        $columnsMapping['faskes_access'] = $colIndex;
+                    } elseif (strpos($val, 'urgensi') !== false || strpos($val, 'prioritas') !== false) {
+                        $columnsMapping['urgency_priority'] = $colIndex;
+                    }
+                }
+            }
+
+            // Fallbacks for missing columns in mapping
+            if ($columnsMapping['province_name'] === null) $columnsMapping['province_name'] = 1;
+            if ($columnsMapping['stunting_prevalence'] === null) $columnsMapping['stunting_prevalence'] = 3;
+            if ($columnsMapping['status'] === null) $columnsMapping['status'] = 4;
+            if ($columnsMapping['faskes_access'] === null) $columnsMapping['faskes_access'] = 5;
+            if ($columnsMapping['urgency_priority'] === null) $columnsMapping['urgency_priority'] = 6;
+
+            $provinceCodes = [
+                'aceh' => 'AC', 'sumatera utara' => 'SU', 'sumatera barat' => 'SB', 'riau' => 'RI',
+                'jambi' => 'JA', 'sumatera selatan' => 'SS', 'bengkulu' => 'BE', 'lampung' => 'LA',
+                'kepulauan bangka belitung' => 'BB', 'bangka belitung' => 'BB', 'kepulauan riau' => 'KR',
+                'kep. riau' => 'KR', 'dki jakarta' => 'JK', 'dki' => 'JK', 'jakarta' => 'JK',
+                'jawa barat' => 'JB', 'jawa tengah' => 'JT', 'd.i. yogyakarta' => 'YO', 'di yogyakarta' => 'YO',
+                'yogyakarta' => 'YO', 'jawa timur' => 'JI', 'banten' => 'BT', 'bali' => 'BA',
+                'nusa tenggara barat' => 'NB', 'ntb' => 'NB', 'nusa tenggara timur' => 'NT', 'ntt' => 'NT',
+                'kalimantan barat' => 'KB', 'kalimantan tengah' => 'KT', 'kalimantan selatan' => 'KS',
+                'kalimantan timur' => 'KI', 'kalimantan utara' => 'KU', 'sulawesi utara' => 'SA',
+                'gorontalo' => 'GO', 'sulawesi tengah' => 'ST', 'sulawesi barat' => 'SR', 'sulawesi selatan' => 'SN',
+                'sulawesi tenggara' => 'SG', 'maluku' => 'MA', 'maluku utara' => 'MU', 'papua barat' => 'PB', 'papua' => 'PA'
+            ];
+
+            // 3. Process records starting after header row (or index 1 if header not matched)
+            $startIndex = ($headerRowIndex !== null) ? $headerRowIndex + 1 : 1;
+            $successCount = 0;
+
+            for ($i = $startIndex; $i < count($rows); $i++) {
+                $row = $rows[$i];
+                if (empty($row) || !isset($row[$columnsMapping['province_name']])) {
+                    continue;
+                }
+
+                $provName = trim($row[$columnsMapping['province_name']]);
+                if (empty($provName) || strtolower($provName) === 'provinsi') {
+                    continue;
+                }
+
+                $stunting = isset($row[$columnsMapping['stunting_prevalence']]) ? trim($row[$columnsMapping['stunting_prevalence']]) : '';
+                $faskes = isset($row[$columnsMapping['faskes_access']]) ? trim($row[$columnsMapping['faskes_access']]) : '';
+                $urgency = isset($row[$columnsMapping['urgency_priority']]) ? trim($row[$columnsMapping['urgency_priority']]) : '';
+                
+                // Clean percentages or non-numeric formatting if any, but preserve text like "Belum tersedia"
+                if (!empty($stunting) && is_numeric(str_replace('%', '', $stunting))) {
+                    $stunting = str_replace('%', '', $stunting);
+                }
+
+                // Status calculation if not provided or empty
+                $status = isset($row[$columnsMapping['status']]) ? trim($row[$columnsMapping['status']]) : '';
+                if (empty($status) && !empty($stunting) && is_numeric($stunting)) {
+                    $status = (floatval($stunting) > 19.8) ? 'Di atas rata-rata nasional' : 'Di bawah rata-rata nasional';
+                }
+
+                // Map to province code
+                $nameLower = strtolower($provName);
+                $code = null;
+                foreach ($provinceCodes as $key => $val) {
+                    if (strpos($nameLower, $key) !== false) {
+                        $code = $val;
+                        break;
+                    }
+                }
+
+                if ($code) {
+                    \App\Models\ProvinceStuntingData::updateOrCreate(
+                        ['province_code' => $code],
+                        [
+                            'province_name' => $provName,
+                            'stunting_prevalence' => $stunting,
+                            'status' => $status ?: 'Di atas rata-rata nasional',
+                            'faskes_access' => $faskes ?: 'Sedang.',
+                            'urgency_priority' => $urgency ?: 'Prioritas penanganan.',
+                            'data_year' => $year
+                        ]
+                    );
+                    $successCount++;
+                }
+            }
+
+            return back()->with('success', "Berhasil memperbarui {$successCount} data stunting provinsi untuk tahun {$year}!");
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Terjadi kesalahan sistem saat memproses file: ' . $e->getMessage());
+        }
     }
 }
