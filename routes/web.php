@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\MentalHealthScanController;
 use App\Http\Middleware\AdminMiddleware;
 
 // Main landing page (named home)
@@ -37,6 +38,10 @@ Route::middleware('guest')->group(function () {
     Route::post('/reset/verify', [AuthController::class, 'verifyResetCode'])->name('reset.verify');
     Route::get('/reset/password', [AuthController::class, 'showResetPassword'])->name('reset.password.show');
     Route::post('/reset/password', [AuthController::class, 'resetPassword'])->name('reset.password');
+
+    // Google OAuth
+    Route::get('/auth/google', [AuthController::class, 'redirectToGoogle'])->name('auth.google');
+    Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback'])->name('auth.google.callback');
 });
 
 // Verification (requires email to be in session, accessible for unverified logged-out users in the process)
@@ -56,6 +61,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/user/dashboard', function () {
         return view('user.dashboard');
     })->name('user.dashboard');
+
+    // Mental Health Scanner
+    Route::get('/user/mental-scan', [MentalHealthScanController::class, 'index'])->name('user.mental-scan');
+    Route::post('/api/mental-scan/analyze-single', [MentalHealthScanController::class, 'analyzeSingle'])->name('api.mental-scan.single');
+    Route::post('/api/mental-scan/analyze-full', [MentalHealthScanController::class, 'analyzeFull'])->name('api.mental-scan.full');
+    Route::get('/api/mental-scan/{id}', [MentalHealthScanController::class, 'show'])->name('api.mental-scan.show');
+    Route::post('/api/mental-scan/{id}/compare', [MentalHealthScanController::class, 'compare'])->name('api.mental-scan.compare');
+    Route::get('/api/mental-scan/history/{patientName}', [MentalHealthScanController::class, 'history'])->name('api.mental-scan.history');
 });
 
 Route::middleware(['auth', AdminMiddleware::class])->group(function () {

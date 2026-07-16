@@ -124,6 +124,13 @@
             </button>
         </form>
 
+        <div style="margin-top:16px;">
+            <a href="{{ route('auth.google') }}" style="width:100%;padding:12px;font-size:14px;display:flex;align-items:center;justify-content:center;gap:10px;text-align:center;text-decoration:none;border:1px solid var(--border);background:rgba(255,255,255,0.02);border-radius:8px;color:var(--text);font-weight:700;transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.06)';this.style.borderColor='var(--php)';" onmouseout="this.style.background='rgba(255,255,255,0.02)';this.style.borderColor='var(--border)';">
+                <img src="https://www.svgrepo.com/show/475656/google-color.svg" style="width:18px;height:18px;" alt="Google">
+                <span>Masuk dengan Google</span>
+            </a>
+        </div>
+
         <div style="text-align:center;margin-top:18px;font-size:12.5px;color:var(--text3);">
             Belum punya akun? <a href="{{ route('register') }}" style="color:var(--php2);font-weight:700;text-decoration:none;">Daftar di sini</a>
         </div>

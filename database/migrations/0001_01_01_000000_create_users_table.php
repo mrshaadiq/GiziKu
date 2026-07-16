@@ -14,10 +14,11 @@ return new class extends Migration
          Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('username')->unique();
+            $table->string('username')->nullable()->unique();
             $table->string('email')->unique();
-            $table->string('phone')->unique();
-            $table->string('password');
+            $table->string('phone')->nullable()->unique();
+            $table->string('password')->nullable();
+            $table->string('google_id')->nullable()->unique();
 
             // OTP verification
             $table->string('email_verification_code')->nullable();

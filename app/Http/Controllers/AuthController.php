@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
+use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
@@ -328,5 +329,68 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('home')->with('success', 'Berhasil keluar.');
+    }
+
+    // ============================================
+    // GOOGLE OAUTH FLOW
+    // ============================================
+
+    public function redirectToGoogle()
+    {
+        return Socialite::driver('google')->redirect();
+    }
+
+    public function handleGoogleCallback()
+    {
+        try {
+            $googleUser = Socialite::driver('google')->user();
+        } catch (\Exception $e) {
+            return redirect()->route('login.user')->with('error', 'Gagal masuk menggunakan Google. Silakan coba lagi.');
+        }
+
+        // Search for user by google_id or email
+        $user = User::where('google_id', $googleUser->getId())
+                    ->orWhere('email', $googleUser->getEmail())
+                    ->first();
+
+        if ($user) {
+            // If user has email but no google_id, link them
+            if (is_null($user->google_id)) {
+                $user->google_id = $googleUser->getId();
+            }
+            // Auto verify email since it comes from Google
+            if (is_null($user->email_verified_at)) {
+                $user->email_verified_at = now();
+            }
+            $user->save();
+        } else {
+            // Generate a random username that is unique
+            $baseUsername = strtolower(explode('@', $googleUser->getEmail())[0]);
+            $username = $baseUsername;
+            $count = 1;
+            while (User::where('username', $username)->exists()) {
+                $username = $baseUsername . $count;
+                $count++;
+            }
+
+            // Create a new user with Google details
+            $user = User::create([
+                'name' => $googleUser->getName(),
+                'email' => $googleUser->getEmail(),
+                'username' => $username,
+                'google_id' => $googleUser->getId(),
+                'email_verified_at' => now(),
+                'role_id' => 2, // Regular user
+                'password' => null, // Password is null for social login
+            ]);
+        }
+
+        Auth::login($user);
+
+        if ($user->isAdmin()) {
+            return redirect()->route('admin.dashboard')->with('success', 'Selamat datang Administrator!');
+        }
+
+        return redirect()->route('user.dashboard')->with('success', 'Berhasil masuk dengan Google!');
     }
 }

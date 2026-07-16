@@ -407,6 +407,9 @@
                     <a href="{{ route('user.dashboard') }}" class="nav-menu-link {{ Route::is('user.dashboard') ? 'active' : '' }}">
                         <i class="fas fa-chart-line w-5 text-sm text-[var(--cyan)]"></i> Dashboard
                     </a>
+                    <a href="{{ route('user.mental-scan') }}" class="nav-menu-link {{ Route::is('user.mental-scan') ? 'active' : '' }}">
+                        <i class="fas fa-brain w-5 text-sm text-[var(--php2)]"></i> Skrining Mental
+                    </a>
                 @endif
             @endauth
         </nav>

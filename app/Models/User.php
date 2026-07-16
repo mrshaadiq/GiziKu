@@ -24,6 +24,7 @@ class User extends Authenticatable
         'reset_code_expired_at',
         'role_id',
         'avatar',
+        'google_id',
     ];
 
     protected $hidden = [
