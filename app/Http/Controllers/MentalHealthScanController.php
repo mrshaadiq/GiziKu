@@ -21,7 +21,11 @@ class MentalHealthScanController extends Controller
      */
     public function index()
     {
-        $history = MentalHealthScan::orderBy('created_at', 'desc')->get();
+        $query = MentalHealthScan::orderBy('created_at', 'desc');
+        if (!auth()->user()->isAdmin()) {
+            $query->where('user_id', auth()->id());
+        }
+        $history = $query->get();
         return view('user.mental-scan', compact('history'));
     }
 
@@ -78,12 +82,26 @@ class MentalHealthScanController extends Controller
         ]);
 
         try {
+            // If follow-up session is requested, ensure the previous session belongs to this user or user is admin
+            if ($request->previous_session_id && !auth()->user()->isAdmin()) {
+                $prevScan = MentalHealthScan::where('id', $request->previous_session_id)
+                    ->where('user_id', auth()->id())
+                    ->first();
+                if (!$prevScan) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Sesi sebelumnya tidak valid atau tidak dimiliki oleh akun ini.'
+                    ], 403);
+                }
+            }
+
             $result = $this->scanService->analyzeFullScan(
                 $request->file('foto_muka'),
                 $request->file('foto_mata'),
                 $request->file('foto_kuku'),
                 $request->input('jawaban_kuesioner'),
                 [
+                    'user_id'       => auth()->id(),
                     'nama_pasien'   => $request->nama_pasien,
                     'usia_pasien'   => $request->usia_pasien,
                     'tanggal_lahir' => $request->tanggal_lahir,
@@ -107,7 +125,11 @@ class MentalHealthScanController extends Controller
      */
     public function show(int $id)
     {
-        $record = MentalHealthScan::with('previousSession')->findOrFail($id);
+        $query = MentalHealthScan::with('previousSession');
+        if (!auth()->user()->isAdmin()) {
+            $query->where('user_id', auth()->id());
+        }
+        $record = $query->findOrFail($id);
         
         if ($record->analisis_gabungan_ai) {
             $record->laporan_gabungan_decoded = json_decode($record->analisis_gabungan_ai, true);
@@ -121,6 +143,12 @@ class MentalHealthScanController extends Controller
      */
     public function compare(Request $request, int $id)
     {
+        $query = MentalHealthScan::query();
+        if (!auth()->user()->isAdmin()) {
+            $query->where('user_id', auth()->id());
+        }
+        $record = $query->findOrFail($id);
+
         $request->validate([
             'foto_muka' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
             'foto_mata' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
@@ -135,7 +163,6 @@ class MentalHealthScanController extends Controller
                 $request->file('foto_kuku')
             );
 
-            $record = MentalHealthScan::findOrFail($id);
             $record->update([
                 'status_perbandingan' => $comparison['status_keseluruhan'],
                 'sesi_tipe'           => 'checkpoint_h7',
@@ -156,9 +183,11 @@ class MentalHealthScanController extends Controller
      */
     public function history(string $patientName)
     {
-        $records = MentalHealthScan::where('nama_pasien', 'like', "%{$patientName}%")
-            ->orderBy('created_at', 'asc')
-            ->get();
+        $query = MentalHealthScan::where('nama_pasien', 'like', "%{$patientName}%");
+        if (!auth()->user()->isAdmin()) {
+            $query->where('user_id', auth()->id());
+        }
+        $records = $query->orderBy('created_at', 'asc')->get();
 
         return response()->json([
             'success' => true,
@@ -171,7 +200,11 @@ class MentalHealthScanController extends Controller
      */
     public function downloadPdf($id)
     {
-        $scan = MentalHealthScan::findOrFail($id);
+        $query = MentalHealthScan::query();
+        if (!auth()->user()->isAdmin()) {
+            $query->where('user_id', auth()->id());
+        }
+        $scan = $query->findOrFail($id);
         
         $laporan = [];
         if ($scan->analisis_gabungan_ai) {

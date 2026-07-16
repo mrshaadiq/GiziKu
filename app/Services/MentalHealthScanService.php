@@ -139,6 +139,7 @@ class MentalHealthScanService
 
         // Save to database
         $record = MentalHealthScan::create([
+            'user_id'              => $patientData['user_id'] ?? null,
             'nama_pasien'          => $patientData['nama_pasien'] ?? null,
             'usia_pasien'          => $patientData['usia_pasien'] ?? null,
             'tanggal_lahir'        => $patientData['tanggal_lahir'] ?? null,
