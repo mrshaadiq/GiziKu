@@ -3,7 +3,7 @@ import { api } from '../api';
 
 export default function ScreeningPage({ onSaveHistory }) {
   const [step, setStep] = useState(1);
-  const [patient, setPatient] = useState({ name: '', age: '', gender: 'L' });
+  const [patient, setPatient] = useState({ name: '', age: '', gender: 'L', birth_date: '' });
   const [measurements, setMeasurements] = useState({ weight: '', height: '' });
   const [loadingAI, setLoadingAI] = useState(false);
   const [aiReady, setAiReady] = useState(false);
@@ -20,6 +20,21 @@ export default function ScreeningPage({ onSaveHistory }) {
 
   const videoRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  const calculateAgeInMonths = (birthDateStr) => {
+    if (!birthDateStr) return '';
+    const birthDate = new Date(birthDateStr);
+    const today = new Date();
+    
+    let months = (today.getFullYear() - birthDate.getFullYear()) * 12;
+    months -= birthDate.getMonth();
+    months += today.getMonth();
+    
+    if (today.getDate() < birthDate.getDate()) {
+      months--;
+    }
+    return Math.max(0, months);
+  };
 
   const getBMI = () => {
     const w = parseFloat(measurements.weight);
@@ -50,11 +65,10 @@ export default function ScreeningPage({ onSaveHistory }) {
 
   const startCamera = async () => {
     try {
-      const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      const s = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'user', width: 640, height: 480 } 
+      });
       setStream(s);
-      if (videoRef.current) {
-        videoRef.current.srcObject = s;
-      }
       setCameraActive(true);
     } catch (err) {
       alert("Kamera tidak dapat diakses. Silakan pilih berkas foto dari perangkat Anda.");
@@ -97,6 +111,12 @@ export default function ScreeningPage({ onSaveHistory }) {
   };
 
   useEffect(() => {
+    if (cameraActive && stream && videoRef.current) {
+      videoRef.current.srcObject = stream;
+    }
+  }, [cameraActive, stream]);
+
+  useEffect(() => {
     if (step === 3) {
       setLoadingAI(true);
       const timer = setTimeout(() => {
@@ -109,7 +129,7 @@ export default function ScreeningPage({ onSaveHistory }) {
 
   const runAnalysis = () => {
     setAnalyzing(true);
-    setStep(5);
+    setStep(4);
     
     setTimeout(() => {
       const stunting = getStuntingStatus();
@@ -128,6 +148,7 @@ export default function ScreeningPage({ onSaveHistory }) {
         id: Date.now(),
         nama_anak: patient.name,
         usia_bulan: parseInt(patient.age),
+        jenis_kelamin: patient.gender,
         berat_badan: parseFloat(measurements.weight),
         tinggi_badan: parseFloat(measurements.height),
         status_stunting: stunting.includes('Stunting') ? 'Stunting' : 'Normal',
@@ -138,7 +159,10 @@ export default function ScreeningPage({ onSaveHistory }) {
           ? "Rujukan segera ke spesialis anak di RSUD terdekat untuk transfusi atau penanganan anemia mikrositik berat. Tingkatkan asupan makanan kaya besi."
           : anemia === 'Anemia Ringan'
           ? "Balita menunjukkan anemia ringan. Berikan suplemen drop besi, hati ayam haluskan, dan makanan tinggi protein."
-          : "Status kesehatan anak normal. Pertahankan gizi seimbang dan jadwal rutin Posyandu."
+          : "Status kesehatan anak normal. Pertahankan gizi seimbang dan jadwal rutin Posyandu.",
+        foto_muka: photos.muka,
+        foto_mata: photos.mata,
+        foto_kuku: photos.kuku
       };
 
       setReport(generatedReport);
@@ -153,9 +177,8 @@ export default function ScreeningPage({ onSaveHistory }) {
   const stepsList = [
     { num: 1, title: 'Profil Anak', desc: 'Nama, usia, jenis kelamin' },
     { num: 2, title: 'Berat & Tinggi', desc: 'Pengukuran tubuh & BMI' },
-    { num: 3, title: 'Persiapan AI', desc: 'Model ke perangkat lokal' },
-    { num: 4, title: 'Pengambilan Foto', desc: '3 foto untuk analisis' },
-    { num: 5, title: 'Hasil Screening', desc: 'Rekomendasi & laporan' }
+    { num: 3, title: 'Pengambilan Foto', desc: '3 foto untuk analisis' },
+    { num: 4, title: 'Hasil Screening', desc: 'Rekomendasi & laporan' }
   ];
 
   return (
@@ -164,13 +187,13 @@ export default function ScreeningPage({ onSaveHistory }) {
       <div className="w-full lg:w-[260px] sticky top-8 space-y-6">
         <div className="p-5 bg-white border border-nura-foreground/10 rounded-2xl">
           <div className="text-[11px] font-bold uppercase tracking-widest text-nura-muted-foreground">Screening Kesehatan</div>
-          <div className="text-xl font-extrabold text-nura-foreground mt-1">Langkah {Math.min(5, step)} dari 5</div>
+          <div className="text-xl font-extrabold text-nura-foreground mt-1">Langkah {Math.min(4, step)} dari 4</div>
           
-          {/* Progress Bar (Tailwind v4 theme colors) */}
+          {/* Progress Bar */}
           <div className="w-full bg-nura-accent h-2 rounded-full mt-3 overflow-hidden">
             <div 
               className="bg-gradient-to-r from-nura-blue to-nura-teal h-full transition-all duration-300" 
-              style={{ width: `${(Math.min(5, step) / 5) * 100}%` }}
+              style={{ width: `${(Math.min(4, step) / 4) * 100}%` }}
             />
           </div>
 
@@ -244,15 +267,26 @@ export default function ScreeningPage({ onSaveHistory }) {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-widest text-nura-muted-foreground mb-2">Usia (bulan)</label>
+                  <label className="flex justify-between items-center text-[11px] font-bold uppercase tracking-widest text-nura-muted-foreground mb-2">
+                    <span>Tanggal Lahir</span>
+                    {patient.age !== '' && (
+                      <span className="text-[10px] text-nura-blue normal-case font-bold bg-nura-accent px-2 py-0.5 rounded-md">
+                        {patient.age} Bulan
+                      </span>
+                    )}
+                  </label>
                   <input 
-                    type="number" 
-                    value={patient.age} 
-                    onChange={(e) => setPatient(prev => ({ ...prev, age: e.target.value }))}
+                    type="date" 
+                    value={patient.birth_date || ''} 
+                    onChange={(e) => {
+                      const dateVal = e.target.value;
+                      const monthsVal = calculateAgeInMonths(dateVal);
+                      setPatient(prev => ({ ...prev, birth_date: dateVal, age: monthsVal }));
+                    }}
                     className="w-full h-[52px] px-4 py-3 text-xs bg-nura-muted border-2 border-transparent focus:border-nura-blue focus:bg-white focus:outline-none rounded-xl text-nura-foreground font-semibold" 
-                    placeholder="mis. 24" 
                   />
                 </div>
+
                 <div>
                   <label className="block text-[11px] font-bold uppercase tracking-widest text-nura-muted-foreground mb-2">Jenis Kelamin</label>
                   <div className="grid grid-cols-2 gap-2">
@@ -355,51 +389,8 @@ export default function ScreeningPage({ onSaveHistory }) {
           </div>
         )}
 
-        {/* STEP 3: PERSIAPAN AI */}
+        {/* STEP 3: PENGAMBILAN FOTO */}
         {step === 3 && (
-          <div className="space-y-6 flex-1 flex flex-col justify-between">
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-lg font-extrabold text-nura-foreground">Persiapan Model AI</h3>
-                <p className="text-xs text-nura-muted-foreground font-medium mt-0.5">Memuat model klasifikasi visual lokal ke memori perangkat</p>
-              </div>
-
-              {loadingAI ? (
-                <div className="py-12 flex flex-col items-center justify-center space-y-4">
-                  <div className="w-10 h-10 border-4 border-nura-blue border-t-transparent rounded-full animate-spin"></div>
-                  <div className="text-xs text-nura-muted-foreground font-semibold">Mengunduh & mengoptimalkan model deteksi lokal...</div>
-                  <div className="w-64 bg-nura-accent h-2 rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-nura-blue to-nura-teal animate-[progress_2s_ease-in-out_infinite]" style={{width: '60%'}}></div>
-                  </div>
-                  <div className="text-[10px] text-nura-muted-foreground font-bold">AI berjalan lokal di perangkat · Tidak perlu internet</div>
-                </div>
-              ) : (
-                <div className="p-5 bg-nura-accent rounded-xl space-y-3 border border-nura-blue/10">
-                  <h4 className="text-xs font-bold text-nura-blue flex items-center gap-2">
-                    ✓ Model AI Siap Berjalan Offline
-                  </h4>
-                  <p className="text-[11px] text-nura-blue/90 leading-relaxed font-semibold">
-                    Model pendeteksi kepucatan konjungtiva dan morfologi kuku telah berhasil dioptimalkan di browser perangkat Anda. Data foto tidak akan dikirim ke server.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <div className="flex justify-between pt-6 border-t border-slate-100 mt-6">
-              <button onClick={() => setStep(2)} disabled={loadingAI} className="h-[48px] px-6 text-xs font-bold rounded-2xl bg-nura-muted text-nura-muted-foreground hover:bg-slate-200/80 transition-all active:scale-[0.98]">Kembali</button>
-              <button 
-                onClick={() => setStep(4)} 
-                disabled={loadingAI || !aiReady}
-                className={`h-[48px] px-8 text-xs font-bold rounded-2xl transition-all ${(loadingAI || !aiReady) ? 'bg-slate-300 text-white cursor-default' : 'bg-nura-blue text-white hover:opacity-90 active:scale-[0.98]'}`}
-              >
-                Mulai Scan
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 4: PENGAMBILAN FOTO */}
-        {step === 4 && (
           <div className="space-y-5 flex-1">
             <div className="flex items-center justify-between">
               <div>
@@ -435,7 +426,7 @@ export default function ScreeningPage({ onSaveHistory }) {
             <div className="border border-nura-foreground/10 rounded-2xl overflow-hidden bg-slate-900 min-h-60 flex flex-col items-center justify-center p-6 relative">
               {cameraActive ? (
                 <div className="w-full max-w-lg aspect-video rounded-xl overflow-hidden border border-slate-700 relative bg-black shadow-lg">
-                  <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover transform -scale-x-100" />
+                  <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover transform -scale-x-100" />
                   <div className="absolute inset-0 border-2 border-nura-blue/30 rounded-xl pointer-events-none flex items-center justify-center">
                     <div className={`w-32 h-32 border-2 border-dashed border-nura-teal/85 ${currentArea === 'muka' ? 'rounded-full' : 'rounded-lg'}`}></div>
                   </div>
@@ -466,7 +457,7 @@ export default function ScreeningPage({ onSaveHistory }) {
             </div>
 
             <div className="flex justify-between pt-6 border-t border-slate-100 mt-6">
-              <button onClick={() => { stopCamera(); setStep(3); }} className="h-[48px] px-6 text-xs font-bold rounded-2xl bg-nura-muted text-nura-muted-foreground hover:bg-slate-200/80 transition-all active:scale-[0.98]">Kembali</button>
+              <button onClick={() => { stopCamera(); setStep(2); }} className="h-[48px] px-6 text-xs font-bold rounded-2xl bg-nura-muted text-nura-muted-foreground hover:bg-slate-200/80 transition-all active:scale-[0.98]">Kembali</button>
               <button 
                 onClick={runAnalysis}
                 disabled={!photos.muka && !photos.mata && !photos.kuku}
@@ -478,8 +469,8 @@ export default function ScreeningPage({ onSaveHistory }) {
           </div>
         )}
 
-        {/* STEP 5: HASIL SCREENING */}
-        {step === 5 && (
+        {/* STEP 4: HASIL SCREENING */}
+        {step === 4 && (
           <div className="space-y-6 flex-1 flex flex-col justify-between">
             <div>
               <h3 className="text-lg font-extrabold text-nura-foreground">Hasil Analisis Screening</h3>
@@ -535,7 +526,7 @@ export default function ScreeningPage({ onSaveHistory }) {
                   <button 
                     onClick={() => {
                       setStep(1);
-                      setPatient({ name: '', age: '', gender: 'L' });
+                      setPatient({ name: '', age: '', gender: 'L', birth_date: '' });
                       setMeasurements({ weight: '', height: '' });
                       setPhotos({ muka: null, mata: null, kuku: null });
                       setReport(null);
@@ -549,7 +540,6 @@ export default function ScreeningPage({ onSaveHistory }) {
             ) : null}
           </div>
         )}
-
       </div>
     </div>
   );

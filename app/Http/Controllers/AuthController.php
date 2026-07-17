@@ -622,4 +622,176 @@ class AuthController extends Controller
             return back()->with('error', 'Terjadi kesalahan sistem saat memproses file: ' . $e->getMessage());
         }
     }
+
+    // ============================================
+    // REACT SPA API AUTHENTICATION METHODS
+    // ============================================
+
+    public function apiLogin(Request $request)
+    {
+        $request->validate([
+            'login' => 'required|string',
+            'password' => 'required|string',
+        ]);
+
+        $user = User::with('role')->where('email', $request->login)
+                    ->orWhere('username', $request->login)
+                    ->first();
+
+        if ($user && Hash::check($request->password, $user->password)) {
+            // Check if email is verified
+            if (is_null($user->email_verified_at)) {
+                $otpCode = random_int(100000, 999999);
+                $user->email_verification_code = $otpCode;
+                $user->save();
+
+                try {
+                    Mail::to($user->email)->send(new SendOtpMail('verification', $otpCode));
+                } catch (\Exception $e) {
+                    logger('Mail failed: ' . $e->getMessage());
+                }
+
+                session(['verify_email' => $user->email]);
+                return response()->json([
+                    'success' => false,
+                    'verify' => true,
+                    'email' => $user->email,
+                    'message' => 'Email Anda belum diverifikasi. Kode OTP baru telah dikirim ke email Anda.'
+                ]);
+            }
+
+            Auth::login($user);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Berhasil masuk!',
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role_id' => $user->role_id,
+                    'role_name' => $user->role->name ?? 'user'
+                ]
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Kredensial yang Anda masukkan salah.'
+        ], 422);
+    }
+
+    public function apiRegister(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'username' => 'required|string|max:255|unique:users,username',
+            'phone' => 'required|string|max:20|unique:users,phone',
+            'email' => 'required|string|email|max:255|unique:users,email',
+            'password' => 'required|string|min:8',
+        ]);
+
+        $otpCode = random_int(100000, 999999);
+
+        $user = User::create([
+            'name' => $request->name,
+            'username' => $request->username,
+            'phone' => $request->phone,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role_id' => 2, // regular user
+            'email_verification_code' => $otpCode,
+        ]);
+
+        try {
+            Mail::to($user->email)->send(new SendOtpMail('verification', $otpCode));
+        } catch (\Exception $e) {
+            logger('Mail failed: ' . $e->getMessage());
+        }
+
+        session(['verify_email' => $user->email]);
+
+        return response()->json([
+            'success' => true,
+            'verify' => true,
+            'email' => $user->email,
+            'message' => 'Registrasi berhasil! Silakan masukkan kode OTP yang dikirim ke email Anda.'
+        ]);
+    }
+
+    public function apiVerify(Request $request)
+    {
+        $request->validate([
+            'code' => 'required|string|size:6',
+            'email' => 'required|string|email'
+        ]);
+
+        $user = User::where('email', $request->email)
+                    ->where('email_verification_code', $request->code)
+                    ->first();
+
+        if ($user) {
+            $user->email_verified_at = now();
+            $user->email_verification_code = null;
+            $user->save();
+
+            Auth::login($user);
+            session()->forget('verify_email');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Akun berhasil diverifikasi!',
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role_id' => $user->role_id,
+                    'role_name' => 'user'
+                ]
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Kode OTP salah. Silakan periksa kembali.'
+        ], 422);
+    }
+
+    public function apiLogout()
+    {
+        Auth::logout();
+        Session::flush();
+        return response()->json([
+            'success' => true,
+            'message' => 'Berhasil keluar.'
+        ]);
+    }
+
+    public function apiResendCode(Request $request)
+    {
+        $email = $request->email ?: session('verify_email');
+        if (!$email) {
+            return response()->json(['success' => false, 'message' => 'Sesi verifikasi tidak ditemukan.'], 400);
+        }
+
+        $user = User::where('email', $email)->first();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Pengguna tidak ditemukan.'], 404);
+        }
+
+        $otpCode = random_int(100000, 999999);
+        $user->email_verification_code = $otpCode;
+        $user->save();
+
+        try {
+            Mail::to($user->email)->send(new SendOtpMail('verification', $otpCode));
+        } catch (\Exception $e) {
+            logger('Mail failed: ' . $e->getMessage());
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Kode OTP baru telah dikirim ke email Anda.'
+        ]);
+    }
 }
