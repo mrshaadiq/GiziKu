@@ -114,24 +114,25 @@ Route::post('/verify/resend', [AuthController::class, 'resendCode'])->name('veri
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // ============================================
-// PROTECTED DASHBOARDS
+// PROTECTED DASHBOARDS & API ROUTES
 // ============================================
+
+// Mental Health Scanner API & Web routes (moved outside auth to bypass login)
+Route::get('/user/mental-scan', [MentalHealthScanController::class, 'index'])->name('user.mental-scan');
+Route::get('/user/mental-scan/{id}/pdf', [MentalHealthScanController::class, 'downloadPdf'])->name('user.mental-scan.pdf');
+Route::post('/api/mental-scan/analyze-single', [MentalHealthScanController::class, 'analyzeSingle'])->name('api.mental-scan.single');
+Route::post('/api/mental-scan/analyze-full', [MentalHealthScanController::class, 'analyzeFull'])->name('api.mental-scan.full');
+Route::get('/api/mental-scan/{id}', [MentalHealthScanController::class, 'show'])->name('api.mental-scan.show');
+Route::post('/api/mental-scan/{id}/compare', [MentalHealthScanController::class, 'compare'])->name('api.mental-scan.compare');
+Route::get('/api/mental-scan/history/{patientName}', [MentalHealthScanController::class, 'history'])->name('api.mental-scan.history');
 
 Route::middleware('auth')->group(function () {
     // User dashboard
     Route::get('/user/dashboard', function () {
         return view('user.dashboard');
     })->name('user.dashboard');
-
-    // Mental Health Scanner
-    Route::get('/user/mental-scan', [MentalHealthScanController::class, 'index'])->name('user.mental-scan');
-    Route::get('/user/mental-scan/{id}/pdf', [MentalHealthScanController::class, 'downloadPdf'])->name('user.mental-scan.pdf');
-    Route::post('/api/mental-scan/analyze-single', [MentalHealthScanController::class, 'analyzeSingle'])->name('api.mental-scan.single');
-    Route::post('/api/mental-scan/analyze-full', [MentalHealthScanController::class, 'analyzeFull'])->name('api.mental-scan.full');
-    Route::get('/api/mental-scan/{id}', [MentalHealthScanController::class, 'show'])->name('api.mental-scan.show');
-    Route::post('/api/mental-scan/{id}/compare', [MentalHealthScanController::class, 'compare'])->name('api.mental-scan.compare');
-    Route::get('/api/mental-scan/history/{patientName}', [MentalHealthScanController::class, 'history'])->name('api.mental-scan.history');
 });
+
 
 Route::middleware(['auth', AdminMiddleware::class])->group(function () {
     // Admin dashboard
