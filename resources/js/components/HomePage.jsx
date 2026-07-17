@@ -1,156 +1,134 @@
-import React, { useState, useEffect } from 'react';
-import { api } from '../api';
-import IndonesiaSVGMap from './IndonesiaSVGMap';
+import React from 'react';
 
-export default function HomePage() {
-  const [provinces, setProvinces] = useState([]);
-  const [activeLayer, setActiveLayer] = useState('risk');
-  const [selectedProvince, setSelectedProvince] = useState(null);
+export default function HomePage({ history, onTabChange }) {
+  const recent = history.slice(0, 5);
 
-  useEffect(() => {
-    api('/geo-triage/provinces').then(data => {
-      setProvinces(data);
-    });
-  }, []);
-
-  const highRisk = provinces.filter(p => p.risk_score >= 45);
-  const selected = provinces.find(p => p.province_code === selectedProvince);
-
-  const SOURCES = [
-    { label: 'BPS — Angka Kematian Ibu (AKI)', url: 'https://www.bps.go.id/id/statistics-table/2/MTczNyMy/angka-kematian-ibu-melahirkan-per-100-000-kelahiran-hidup.html' },
-    { label: 'Kemenkes — Data Thalasemia Indonesia', url: 'https://www.kemkes.go.id/article/view/23010400004/data-dan-informasi-profil-kesehatan-indonesia-2022.html' },
-    { label: 'WHO — Maternal Mortality Ratio', url: 'https://www.who.int/data/gho/data/indicators/indicator-details/GHO/maternal-mortality-ratio-(per-100-000-live-births)' },
-    { label: 'Kemenkes — Profil Faskes (Puskesmas)', url: 'https://www.kemkes.go.id/article/view/23123100005/profil-kementerian-kesehatan-ri-tahun-2023.html' },
-    { label: 'BPS — Jumlah Penduduk per Provinsi', url: 'https://www.bps.go.id/id/statistics-table/2/MTk2IzI=/projected-population-by-province-2020-2025.html' },
-  ];
+  const stats = {
+    total: history.length,
+    needsFollowUp: history.filter(h => h.status_anemia === 'Anemia Berat' || h.status_stunting === 'Stunting').length,
+    faskes: 4,
+    articles: 6
+  };
 
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 to-slate-950 border border-slate-800 p-6 md:p-8">
-        <h2 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
-          🗺️ Peta Risiko Kesehatan Pranikah Indonesia
-        </h2>
-        <p className="text-slate-400 text-sm mt-2 max-w-2xl">
-          Visualisasi data interaktif risiko stunting, rhesus negatif, kasus thalasemia, dan angka kematian ibu di 34 provinsi Indonesia untuk intervensi kesehatan calon pengantin.
-        </p>
+      {/* Welcome Banner */}
+      <div>
+        <div className="text-xs font-black text-slate-400 font-mono">Jumat, 17 Juli 2026</div>
+        <h2 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight mt-1">Halo, Orang Tua! 👋</h2>
+        <p className="text-slate-400 text-xs mt-1.5 font-semibold">Pantau tumbuh kembang dan kesehatan si kecil dari satu tempat.</p>
       </div>
 
-      {/* Layer Toggles */}
-      <div className="flex flex-wrap gap-2 p-1.5 bg-slate-950 border border-slate-900 rounded-xl w-max">
+      {/* 4 Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { id: 'risk', label: '🎯 Skor Risiko Gabungan' },
-          { id: 'aki', label: '💔 Kematian Ibu (AKI)' },
-          { id: 'thalasemia', label: '🧬 Kasus Thalasemia' },
-          { id: 'literasi', label: '📖 Indeks Literasi' },
-        ].map(l => (
-          <button 
-            key={l.id} 
-            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 ${activeLayer === l.id ? 'bg-cyan-500 text-slate-950 font-black shadow-md shadow-cyan-500/20' : 'text-slate-400 hover:text-white'}`}
-            onClick={() => setActiveLayer(l.id)}
-          >
-            {l.label}
-          </button>
+          { label: 'Total Pemeriksaan', val: stats.total, icon: '📈', color: 'text-blue-600 bg-blue-50 border-blue-100' },
+          { label: 'Perlu Tindak Lanjut', val: stats.needsFollowUp, icon: '⚠️', color: 'text-rose-600 bg-rose-50 border-rose-100' },
+          { label: 'Faskes Tersedia', val: stats.faskes, icon: '🏥', color: 'text-emerald-600 bg-emerald-50 border-emerald-100' },
+          { label: 'Artikel Edukasi', val: stats.articles, icon: '📖', color: 'text-amber-600 bg-amber-50 border-amber-100' }
+        ].map((s, idx) => (
+          <div key={idx} className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 border ${s.color}`}>
+              {s.icon}
+            </div>
+            <div>
+              <div className="text-[10px] text-slate-400 font-bold leading-none">{s.label}</div>
+              <div className="text-lg md:text-xl font-black text-slate-800 font-mono mt-1 leading-none">{s.val}</div>
+            </div>
+          </div>
         ))}
       </div>
 
-      {/* Map Widget */}
-      <div className="p-6 bg-slate-950/80 border border-slate-900 rounded-2xl shadow-xl shadow-black/40">
-        <IndonesiaSVGMap
-          provinces={provinces}
-          activeLayer={activeLayer}
-          selectedProvince={selectedProvince}
-          onSelectProvince={(p) => setSelectedProvince(p.province_code === selectedProvince ? null : p.province_code)}
-        />
-
-        <div className="flex flex-wrap items-center justify-center gap-6 mt-6 pt-6 border-t border-slate-900 text-xs font-semibold text-slate-400">
-          <div className="flex items-center gap-2"><span className="w-3.5 h-3.5 rounded bg-emerald-500"></span> Risiko Rendah</div>
-          <div className="flex items-center gap-2"><span className="w-3.5 h-3.5 rounded bg-yellow-500"></span> Risiko Sedang</div>
-          <div className="flex items-center gap-2"><span className="w-3.5 h-3.5 rounded bg-orange-500"></span> Risiko Tinggi</div>
-          <div className="flex items-center gap-2"><span className="w-3.5 h-3.5 rounded bg-red-600"></span> Risiko Sangat Tinggi</div>
-        </div>
-      </div>
-
-      {/* Selected Province details */}
-      {selected && (
-        <div className="bg-gradient-to-br from-slate-900 to-slate-950 border rounded-2xl p-6 transition-all duration-300 shadow-lg shadow-black/30" style={{borderColor: selected.risk_color + '40'}}>
-          <div className="flex items-center justify-between border-b border-slate-900 pb-4 mb-4">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">📍 Provinsi {selected.province_name}</h3>
-            <span className="px-3 py-1 rounded-full text-xs font-bold font-mono tracking-wider shadow-inner" style={{background: selected.risk_color + '20', color: selected.risk_color}}>
-              SKOR RISIKO: {selected.risk_score}
-            </span>
+      {/* Main split grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Left Side: Screening Banner & Shortcuts */}
+        <div className="lg:col-span-2 space-y-4">
+          
+          {/* Large Screening Card */}
+          <div 
+            onClick={() => onTabChange('screening')}
+            className="p-6 bg-gradient-to-r from-blue-600 to-teal-500 rounded-3xl text-white shadow-xl shadow-blue-500/10 cursor-pointer hover:shadow-2xl hover:scale-[1.01] transition-all flex items-center justify-between relative overflow-hidden"
+          >
+            <div className="space-y-3 z-10 max-w-[80%]">
+              <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-xl">📸</div>
+              <h3 className="text-lg md:text-xl font-black tracking-tight mt-3">Screening Kesehatan Anak</h3>
+              <div className="flex gap-1.5">
+                {['Fisik', 'Gizi', 'Mental'].map((t, idx) => (
+                  <span key={idx} className="px-2 py-0.5 rounded bg-white/20 text-[9px] font-black uppercase tracking-wider">{t}</span>
+                ))}
+              </div>
+              <p className="text-[10px] text-blue-50/80 leading-relaxed font-semibold">
+                Analisis AI berbasis kamera · Berjalan sepenuhnya di perangkat · Hasil instan tanpa internet
+              </p>
+            </div>
+            
+            <div className="text-2xl font-black text-white/40 shrink-0">➔</div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="p-3.5 bg-slate-950/50 border border-slate-900 rounded-xl">
-              <div className="text-xl font-bold font-mono text-cyan-400">{selected.stunting}%</div>
-              <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mt-1">Prevalensi Stunting</div>
-            </div>
-            <div className="p-3.5 bg-slate-950/50 border border-slate-900 rounded-xl">
-              <div className="text-xl font-bold font-mono text-white">{selected.aki}</div>
-              <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mt-1">Kematian Ibu (per 100k)</div>
-            </div>
-            <div className="p-3.5 bg-slate-950/50 border border-slate-900 rounded-xl">
-              <div className="text-xl font-bold font-mono text-white">{selected.kasus_thalasemia?.toLocaleString()}</div>
-              <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mt-1">Kasus Thalasemia</div>
-            </div>
-            <div className="p-3.5 bg-slate-950/50 border border-slate-900 rounded-xl">
-              <div className="text-xl font-bold font-mono text-white">{selected.populasi_rh_negatif_persen}%</div>
-              <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mt-1">Populasi Rhesus (-)</div>
-            </div>
-            <div className="p-3.5 bg-slate-950/50 border border-slate-900 rounded-xl">
-              <div className="text-xl font-bold font-mono text-amber-400">{selected.defisit_stok_rh_negatif} vial</div>
-              <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mt-1">Defisit Imunoglobulin</div>
-            </div>
-            <div className="p-3.5 bg-slate-950/50 border border-slate-900 rounded-xl">
-              <div className="text-xl font-bold font-mono text-white">{selected.indeks_literasi}/5</div>
-              <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mt-1">Indeks Literasi</div>
-            </div>
-            <div className="p-3.5 bg-slate-950/50 border border-slate-900 rounded-xl col-span-2">
-              <div className="text-xs text-slate-300 leading-relaxed font-medium">{selected.faskes_access}</div>
-              <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mt-1.5">Aksesibilitas Faskes Rujukan</div>
-            </div>
-          </div>
-          <div className="mt-4 p-3 bg-red-950/15 border border-red-500/15 rounded-xl">
-            <span className="text-[9px] uppercase tracking-widest font-extrabold text-red-400 block mb-1">Rencana Prioritas Penanganan Daerah</span>
-            <p className="text-xs text-slate-400 leading-relaxed">{selected.urgency_priority}</p>
-          </div>
-        </div>
-      )}
-
-      {/* High Risk Provinces */}
-      <div className="bg-slate-950 border border-slate-900 rounded-2xl p-6">
-        <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">⚠️ Provinsi Dengan Urgensi Tinggi ({highRisk.length})</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-          {highRisk.slice(0, 8).map(p => (
+          {/* 2 Smaller Shortcuts Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div 
-              key={p.province_code} 
-              className="p-3.5 bg-slate-900/30 border border-slate-800 rounded-xl cursor-pointer hover:border-slate-700 hover:bg-slate-900/50 transition-all"
-              style={{borderLeftWidth: '4px', borderLeftColor: p.risk_color}}
-              onClick={() => setSelectedProvince(p.province_code === selectedProvince ? null : p.province_code)}
+              onClick={() => onTabChange('education')}
+              className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm hover:border-slate-300 cursor-pointer transition-all flex flex-col justify-between"
             >
-              <div className="text-xs font-bold text-white">{p.province_name}</div>
-              <div className="text-sm font-black font-mono mt-1" style={{color: p.risk_color}}>RISIKO: {p.risk_score}</div>
-              <div className="text-[10px] text-slate-500 mt-0.5">Stunting: {p.stunting}% · AKI: {p.aki}</div>
+              <div className="space-y-2">
+                <span className="text-xl">📖</span>
+                <h4 className="text-xs font-bold text-slate-800">Edukasi & Literasi</h4>
+                <p className="text-[10px] text-slate-400 font-semibold leading-relaxed">6 artikel tentang gizi dan kesehatan mental anak</p>
+              </div>
+              <span className="text-[10px] text-blue-600 hover:text-blue-500 font-black mt-4 inline-block">Jelajah Materi ➔</span>
             </div>
-          ))}
-        </div>
-      </div>
 
-      {/* Government data resources */}
-      <div className="bg-slate-950/40 border border-slate-900 rounded-2xl p-6">
-        <h3 className="text-sm font-bold text-slate-300 mb-2">📚 Sumber Data Nasional Resmi</h3>
-        <p className="text-xs text-slate-500 mb-4">Intervensi klinis & epidemiologi GiziKu terintegrasi dengan publikasi data resmi:</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-          {SOURCES.map((s, i) => (
-            <a 
-              key={i} href={s.url} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 p-2.5 rounded-lg bg-slate-950 border border-slate-900 hover:border-cyan-500/30 hover:bg-slate-900/30 text-xs text-cyan-400 hover:text-cyan-300 transition-all font-semibold"
+            <div 
+              onClick={() => onTabChange('facilities')}
+              className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm hover:border-slate-300 cursor-pointer transition-all flex flex-col justify-between"
             >
-              <span>🔗</span>
-              <span className="truncate">{s.label}</span>
-            </a>
-          ))}
+              <div className="space-y-2">
+                <span className="text-xl">🏥</span>
+                <h4 className="text-xs font-bold text-slate-800">Faskes Terdekat</h4>
+                <p className="text-[10px] text-slate-400 font-semibold leading-relaxed">4 fasilitas kesehatan ditemukan di sekitar Anda</p>
+              </div>
+              <span className="text-[10px] text-emerald-600 hover:text-emerald-500 font-black mt-4 inline-block">Lihat Faskes ➔</span>
+            </div>
+          </div>
+
         </div>
+
+        {/* Right Side: Recent History List */}
+        <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h3 className="text-xs font-black text-slate-800">Riwayat Terbaru</h3>
+            <button 
+              onClick={() => onTabChange('history')}
+              className="text-[10px] font-black text-blue-600 hover:text-blue-500"
+            >
+              Lihat Semua
+            </button>
+          </div>
+
+          <div className="space-y-3.5">
+            {recent.map(r => (
+              <div 
+                key={r.id} 
+                className="flex items-center justify-between gap-3 text-xs border-b border-slate-50 pb-3 last:border-0 last:pb-0"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center font-bold text-slate-400 text-[10px]">👶</div>
+                  <div>
+                    <div className="font-extrabold text-slate-800">{r.nama_anak}</div>
+                    <div className="text-[9px] text-slate-400 font-bold leading-none mt-0.5">{r.usia_bulan} bln · {r.tanggal}</div>
+                  </div>
+                </div>
+                
+                <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase shrink-0 shadow-inner ${r.status_anemia === 'Anemia Berat' ? 'bg-red-50 text-red-600 border border-red-100' : r.status_anemia === 'Anemia Ringan' ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}`}>
+                  {r.status_anemia}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
     </div>
   );
