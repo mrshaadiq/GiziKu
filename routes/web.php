@@ -81,16 +81,14 @@ Route::get('/login', function () {
 // ============================================
 
 Route::middleware('guest')->group(function () {
-    // Register
-    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-    Route::post('/register', [AuthController::class, 'register']);
+    // Unified Login Route
+    Route::get('/login', [AuthController::class, 'showLoginUser'])->name('login');
+    Route::post('/login', [AuthController::class, 'loginUser']);
 
-    // Logins
-    Route::get('/login/admin', [AuthController::class, 'showLoginAdmin'])->name('login.admin');
-    Route::post('/login/admin', [AuthController::class, 'loginAdmin']);
-
-    Route::get('/login/user', [AuthController::class, 'showLoginUser'])->name('login.user');
-    Route::post('/login/user', [AuthController::class, 'loginUser']);
+    // Legacy Redirect Aliases to avoid breaking existing references
+    Route::get('/login/user', function () { return redirect()->route('login'); })->name('login.user');
+    Route::get('/login/admin', function () { return redirect()->route('login'); })->name('login.admin');
+    Route::get('/register', function () { return redirect()->route('login'); })->name('register');
 
     // Forgot / Reset Password
     Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('forgot.password');

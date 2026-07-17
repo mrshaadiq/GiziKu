@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class MentalHealthScan extends Model
 {
     protected $fillable = [
+        'user_id',
         'nama_pasien',
         'usia_pasien',
         'tanggal_lahir',
@@ -37,6 +38,11 @@ class MentalHealthScan extends Model
         'sesi_sebelumnya_id',
         'status_perbandingan',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     protected $casts = [
         'jawaban_kuesioner'  => 'array',

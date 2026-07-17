@@ -1,68 +1,85 @@
 @extends('layouts.app')
 
-@section('title', 'Login — talentgroup.id')
+@section('title', 'Masuk ke Dashboard')
 
 @section('content')
-
 <style>
-/* ================= CYBER LOGIN ================= */
 .cyber-login-wrapper {
-    max-width: 420px;
-    margin: 80px auto;
-    position: relative;
-    padding: 0 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 160px);
+    padding: 20px 0;
 }
-
-/* Glowing orb effect behind the login card */
-.cyber-login-wrapper::before {
+.cyber-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+    width: 100%;
+    max-width: 420px;
+    position: relative;
+    overflow: hidden;
+}
+.cyber-card::before {
     content: '';
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 300px;
-    height: 300px;
-    background: radial-gradient(circle, rgba(124,92,191,0.15) 0%, transparent 70%);
-    z-index: -1;
-    border-radius: 50%;
-    filter: blur(20px);
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--php) 0%, var(--cyan) 100%);
 }
-
-.modal-tabs2 {
-    display: flex; gap: 0;
+.cyber-input {
+    width: 100%;
     background: var(--bg3);
-    border-radius: 10px; padding: 4px; margin-bottom: 28px;
+    border: 1px solid var(--border);
+    padding: 12px 16px;
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 13.5px;
+    transition: all 0.2s ease-in-out;
+    outline: none;
 }
-.mtab {
-    flex: 1; padding: 8px; border-radius: 7px;
-    background: none; border: none; text-align: center;
-    font-size: 13px; font-weight: 700; color: var(--text3);
-    cursor: pointer; font-family: inherit; transition: all 0.2s;
-    text-decoration: none; display: block;
+.cyber-input:focus {
+    border-color: var(--php);
+    box-shadow: 0 0 0 2px rgba(124, 92, 191, 0.15);
 }
-.mtab.active {
-    background: var(--surface2); color: var(--text);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+.btn-primary {
+    background: linear-gradient(135deg, var(--php) 0%, var(--php2) 100%);
+    color: white;
+    font-weight: 700;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+    box-shadow: 0 4px 12px rgba(124, 92, 191, 0.3);
 }
-
-.form-group { margin-bottom: 16px; }
+.btn-primary:hover {
+    opacity: 0.95;
+}
+.btn-primary:active {
+    transform: scale(0.98);
+}
+.form-group {
+    margin-bottom: 20px;
+}
 .form-group label {
-    display: block; font-size: 11.5px; font-weight: 700;
-    color: var(--text2); margin-bottom: 6px; letter-spacing: 0.3px;
+    display: block;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--text2);
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
 }
 </style>
 
 <div class="cyber-login-wrapper">
 
     <div class="cyber-card" style="padding: 36px;">
-        
-        <div class="modal-tabs2">
-            <a href="{{ route('login.user') }}" class="mtab active">Masuk</a>
-            <a href="{{ route('register') }}" class="mtab">Daftar Baru</a>
-        </div>
 
-        <h2 style="font-size:22px;font-weight:800;margin-bottom:6px;">Selamat Datang Kembali</h2>
-        <p style="font-size:13px;color:var(--text2);margin-bottom:24px;">Lanjutkan perjalanan belajarmu hari ini.</p>
+        <h2 style="font-size:22px;font-weight:800;margin-bottom:6px;">Masuk ke GiziKu</h2>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:24px;">Gunakan akun Anda atau masuk secara instan.</p>
 
         <!-- ALERTS -->
         @if(session('success'))
@@ -91,7 +108,7 @@
                     value="{{ old('login') }}"
                     required
                     autofocus
-                    placeholder="Masukkan email"
+                    placeholder="Masukkan email atau username"
                     class="cyber-input"
                     style="border-color: {{ $errors->has('login') ? 'var(--red)' : 'var(--border)' }};"
                 >
@@ -131,14 +148,8 @@
             </a>
         </div>
 
-        <div style="text-align:center;margin-top:18px;font-size:12.5px;color:var(--text3);">
-            Belum punya akun? <a href="{{ route('register') }}" style="color:var(--php2);font-weight:700;text-decoration:none;">Daftar di sini</a>
-        </div>
-
-        <div style="margin-top:24px;padding-top:24px;border-top:1px solid var(--border);text-align:center;">
-            <a href="{{ route('login.admin') }}" style="font-size:11px;font-family:'Fira Code',monospace;color:var(--text3);text-decoration:none;transition:color 0.2s;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text3)'">
-                <i class="fas fa-shield-alt"></i> Admin Terminal Access
-            </a>
+        <div style="text-align:center;margin-top:18px;font-size:12px;color:var(--text3);line-height:1.5;">
+            Belum punya akun? Masuk secara instan menggunakan tombol <strong>Google</strong> di atas untuk registrasi otomatis.
         </div>
 
     </div>
