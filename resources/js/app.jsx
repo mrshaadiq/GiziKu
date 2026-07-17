@@ -17,7 +17,11 @@ import {
   Activity, 
   Phone, 
   Info,
-  CheckCircle2
+  CheckCircle2,
+  Utensils,
+  Settings,
+  Sparkles,
+  Brain
 } from 'lucide-react';
 
 // Page component imports (Desktop views)
@@ -27,6 +31,9 @@ import EdukasiPage from './components/EdukasiPage';
 import FaskesPage from './components/FaskesPage';
 import RiwayatPage from './components/RiwayatPage';
 import MobileApp from './components/MobileApp';
+import FoodAiPage from './components/FoodAiPage';
+import MentalScanPage from './components/MentalScanPage';
+import LoginRegisterPage from './components/LoginRegisterPage';
 
 // ============================================
 // PLATFORM DETECTION HOOK (Design System §13)
@@ -137,36 +144,77 @@ function ChatbotWidget() {
   );
 }
 
-// MobileApp extracted to ./components/MobileApp.jsx
-
 // ============================================
 // WEB DESKTOP REPRESENTATION (Design System §15)
 // ============================================
-function DesktopApp({ history, addHistory }) {
-  const [activeTab, setActiveTab] = useState('home');
+function DesktopApp({ user, onLogout, onLoginSuccess, history, addHistory, onOpenSettings }) {
+  const [activeTab, setActiveTab] = useState(() => window.INITIAL_TAB || 'home');
+  const [targetTab, setTargetTab] = useState(null);
 
   const MENU_ITEMS = [
     { id: 'home', label: 'Beranda', icon: <LayoutDashboard className="w-5 h-5 shrink-0" /> },
     { id: 'screening', label: 'Screening Kesehatan', icon: <Camera className="w-5 h-5 shrink-0" /> },
+    { id: 'mental_scan', label: 'Skrining Mental AI', icon: <Brain className="w-5 h-5 shrink-0" /> },
+    { id: 'food_ai', label: 'Rekomendasi Makanan AI', icon: <Utensils className="w-5 h-5 shrink-0" /> },
     { id: 'education', label: 'Edukasi & Literasi', icon: <BookOpen className="w-5 h-5 shrink-0" /> },
     { id: 'facilities', label: 'Faskes Terdekat', icon: <MapPin className="w-5 h-5 shrink-0" /> },
     { id: 'history', label: 'Riwayat Pemeriksaan', icon: <Clock className="w-5 h-5 shrink-0" /> }
   ];
 
+  if (user && user.role_id === 1) {
+    MENU_ITEMS.push({ id: 'admin_import', label: 'Import Excel (Stunting)', icon: <Settings className="w-5 h-5 shrink-0" /> });
+  }
+
+  const handleTabChange = (tabId) => {
+    if (tabId === 'admin_import') {
+      window.location.href = '/admin/dashboard';
+      return;
+    }
+    const publicTabs = ['home', 'education', 'facilities'];
+    if (!publicTabs.includes(tabId) && !user) {
+      setTargetTab(tabId);
+      setActiveTab('auth');
+    } else {
+      setActiveTab(tabId);
+    }
+  };
+
+  const handleLoginSuccess = (userData) => {
+    onLoginSuccess(userData);
+    if (targetTab) {
+      setActiveTab(targetTab);
+      setTargetTab(null);
+    } else {
+      setActiveTab('home');
+    }
+  };
+
   const renderContent = () => {
+    if (activeTab === 'auth') {
+      return (
+        <div className="max-w-md mx-auto py-8">
+          <AuthPage onLoginSuccess={handleLoginSuccess} />
+        </div>
+      );
+    }
+
     switch (activeTab) {
       case 'home': 
-        return <HomePage history={history} onTabChange={setActiveTab} />;
+        return <HomePage history={history} onTabChange={handleTabChange} />;
       case 'screening': 
         return <ScreeningPage onSaveHistory={addHistory} onTabChange={setActiveTab} />;
+      case 'mental_scan':
+        return <MentalScanPage />;
+      case 'food_ai':
+        return <FoodAiPage history={history} />;
       case 'education': 
-        return <EdukasiPage />;
+        return <EdukasiPage user={user} />;
       case 'facilities': 
         return <FaskesPage />;
       case 'history': 
         return <RiwayatPage history={history} />;
       default: 
-        return <HomePage history={history} onTabChange={setActiveTab} />;
+        return <HomePage history={history} onTabChange={handleTabChange} />;
     }
   };
 
@@ -196,7 +244,7 @@ function DesktopApp({ history, addHistory }) {
                       ? 'bg-nura-accent text-nura-blue shadow-inner' 
                       : 'text-nura-muted-foreground hover:text-nura-foreground hover:bg-nura-muted'
                   }`}
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => handleTabChange(item.id)}
                 >
                   {item.icon}
                   <span className="truncate">{item.label}</span>
@@ -224,7 +272,37 @@ function DesktopApp({ history, addHistory }) {
         {/* Top Page Header */}
         <header className="h-16 border-b border-nura-foreground/8 flex items-center justify-between px-6 bg-white shrink-0">
           <div className="flex items-center gap-4">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-nura-muted-foreground">Program Penyelamatan & Pencegahan Stunting Nasional</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-nura-muted-foreground font-semibold">Program Penyelamatan & Pencegahan Stunting Nasional</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={onOpenSettings}
+              className="w-10 h-10 rounded-xl bg-nura-muted hover:bg-slate-200/80 flex items-center justify-center text-nura-muted-foreground hover:text-nura-foreground transition-all"
+              title="Pengaturan API Key"
+            >
+              <Settings className="w-5 h-5" />
+            </button>
+            {user ? (
+              <div className="flex items-center gap-3 pl-3 border-l border-slate-100">
+                <div className="flex flex-col text-right">
+                  <span className="text-xs font-black text-nura-foreground leading-none">{user.name}</span>
+                  <span className="text-[9px] font-bold text-nura-muted-foreground uppercase tracking-wider mt-0.5">{user.role_name || 'Pengguna'}</span>
+                </div>
+                <button 
+                  onClick={onLogout}
+                  className="px-3.5 py-2 text-xs font-bold text-red-500 hover:text-red-600 bg-red-50 hover:bg-red-100/60 rounded-xl transition-all"
+                >
+                  Keluar
+                </button>
+              </div>
+            ) : (
+              <button 
+                onClick={() => setActiveTab('auth')}
+                className="px-4.5 py-2 text-xs font-bold text-white bg-nura-blue hover:opacity-90 rounded-xl transition-all shadow-md shadow-nura-blue/15"
+              >
+                Masuk
+              </button>
+            )}
           </div>
         </header>
 
@@ -241,23 +319,141 @@ function DesktopApp({ history, addHistory }) {
 }
 
 // ============================================
+// SETTINGS MODAL (API KEY SETTINGS)
+// ============================================
+function SettingsModal({ isOpen, onClose }) {
+  const [key, setKey] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      setKey(localStorage.getItem('gn_deepseek_key') || '');
+    }
+  }, [isOpen]);
+
+  const handleSave = () => {
+    localStorage.setItem('gn_deepseek_key', key.trim());
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn text-nura-foreground font-sans">
+      <div className="w-full max-w-md bg-white border border-slate-100 rounded-[28px] p-6 shadow-2xl space-y-4">
+        <div className="flex items-center justify-between border-b border-nura-muted pb-3">
+          <h3 className="text-sm font-black text-nura-foreground flex items-center gap-2">
+            ⚙️ Pengaturan API Key AI
+          </h3>
+          <button onClick={onClose} className="text-nura-muted-foreground hover:text-nura-foreground text-xs font-bold">✕</button>
+        </div>
+
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold uppercase tracking-widest text-nura-muted-foreground">
+              DeepSeek API Key
+            </label>
+            <input 
+              type="password"
+              value={key}
+              onChange={(e) => setKey(e.target.value)}
+              placeholder="Masukkan DeepSeek API Key (sk-...)"
+              className="w-full h-[48px] px-3.5 py-2.5 text-xs bg-nura-muted border border-transparent focus:border-nura-blue focus:bg-white focus:outline-none rounded-xl text-nura-foreground font-semibold"
+            />
+            <p className="text-[9px] text-nura-muted-foreground leading-relaxed font-semibold">
+              Key disimpan secara lokal di browser (`gn_deepseek_key`). Jika dikosongkan, sistem akan otomatis menggunakan API Key Server (Gemini/Groq) atau mode rekomendasi offline.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+          <button 
+            onClick={onClose}
+            className="px-4.5 py-2 text-xs font-bold rounded-xl bg-nura-muted text-nura-muted-foreground hover:bg-slate-200/80 transition-all"
+          >
+            Batal
+          </button>
+          <button 
+            onClick={handleSave}
+            className="px-6 py-2 text-xs font-bold rounded-xl bg-nura-blue text-white hover:opacity-90 transition-all shadow-md shadow-nura-blue/15"
+          >
+            Simpan Key
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================
 // ROOT RENDER DISPATCHER
 // ============================================
 function App() {
   const isDesktop = useIsDesktop();
+  const [user, setUser] = useState(() => window.USER || null);
   const [history, setHistory] = useState([]);
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
-    api('/tracker').then(setHistory);
-  }, []);
+    fetch('/api/tracker')
+      .then(res => res.json())
+      .then(data => {
+        setHistory(data);
+      })
+      .catch(err => {
+        console.error(err);
+      });
+  }, [user]);
 
   const handleSaveHistory = (newRecord) => {
-    setHistory(prev => [newRecord, ...prev]);
+    fetch('/api/tracker', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+      },
+      body: JSON.stringify(newRecord)
+    })
+      .then(res => res.json())
+      .then(resData => {
+        if (resData.success) {
+          fetch('/api/tracker')
+            .then(res => res.json())
+            .then(setHistory);
+        } else {
+          setHistory(prev => [newRecord, ...prev]);
+        }
+      })
+      .catch(() => {
+        setHistory(prev => [newRecord, ...prev]);
+      });
   };
 
-  return isDesktop
-    ? <DesktopApp history={history} addHistory={handleSaveHistory} />
-    : <MobileApp  history={history} addHistory={handleSaveHistory} />;
+  const handleLogout = () => {
+    fetch('/api/auth/logout', {
+      method: 'POST',
+      headers: {
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+      }
+    })
+      .then(res => res.json())
+      .then(() => {
+        setUser(null);
+        window.location.reload();
+      })
+      .catch(() => {
+        setUser(null);
+        window.location.reload();
+      });
+  };
+
+  return (
+    <>
+      {isDesktop
+        ? <DesktopApp user={user} onLogout={handleLogout} onLoginSuccess={setUser} history={history} addHistory={handleSaveHistory} onOpenSettings={() => setShowSettings(true)} />
+        : <MobileApp  user={user} onLogout={handleLogout} onLoginSuccess={setUser} history={history} addHistory={handleSaveHistory} onOpenSettings={() => setShowSettings(true)} />}
+      <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
+    </>
+  );
 }
 
 // Render React mounting root

@@ -3,6 +3,9 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\MentalHealthScanController;
+use App\Http\Controllers\FoodRecommendationController;
+use App\Http\Controllers\EducationController;
+use App\Http\Controllers\ChildScreeningController;
 use App\Http\Middleware\AdminMiddleware;
 
 // Main landing page (named home)
@@ -108,8 +111,12 @@ Route::get('/verify', [AuthController::class, 'showVerify'])->name('verify.show'
 Route::post('/verify', [AuthController::class, 'verify'])->name('verify');
 Route::post('/verify/resend', [AuthController::class, 'resendCode'])->name('verify.resend');
 
-// Logout
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+// React SPA Unified API Auth Routes
+Route::post('/api/auth/login', [AuthController::class, 'apiLogin']);
+Route::post('/api/auth/register', [AuthController::class, 'apiRegister']);
+Route::post('/api/auth/verify', [AuthController::class, 'apiVerify']);
+Route::post('/api/auth/resend', [AuthController::class, 'apiResendCode']);
+Route::post('/api/auth/logout', [AuthController::class, 'apiLogout']);
 
 // ============================================
 // PROTECTED DASHBOARDS & API ROUTES
@@ -123,11 +130,23 @@ Route::post('/api/mental-scan/analyze-full', [MentalHealthScanController::class,
 Route::get('/api/mental-scan/{id}', [MentalHealthScanController::class, 'show'])->name('api.mental-scan.show');
 Route::post('/api/mental-scan/{id}/compare', [MentalHealthScanController::class, 'compare'])->name('api.mental-scan.compare');
 Route::get('/api/mental-scan/history/{patientName}', [MentalHealthScanController::class, 'history'])->name('api.mental-scan.history');
+Route::get('/api/mental-scan-list', [MentalHealthScanController::class, 'listScans']);
+Route::post('/api/food-recommendations', [FoodRecommendationController::class, 'getRecommendations']);
+
+// Education & Quiz API Routes
+Route::get('/api/education', [EducationController::class, 'listArticles']);
+Route::post('/api/education', [EducationController::class, 'store']);
+Route::put('/api/education/{id}', [EducationController::class, 'update']);
+Route::delete('/api/education/{id}', [EducationController::class, 'destroy']);
+
+// Child Screening Tracker API Routes
+Route::get('/api/tracker', [ChildScreeningController::class, 'listScreenings']);
+Route::post('/api/tracker', [ChildScreeningController::class, 'store']);
 
 Route::middleware('auth')->group(function () {
-    // User dashboard
+    // User dashboard redirecting to React SPA home
     Route::get('/user/dashboard', function () {
-        return view('user.dashboard');
+        return redirect()->route('home');
     })->name('user.dashboard');
 });
 

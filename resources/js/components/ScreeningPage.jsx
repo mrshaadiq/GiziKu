@@ -10,7 +10,7 @@ import ScreeningResultsStep from './screening/ScreeningResultsStep';
 
 export default function ScreeningPage({ onSaveHistory, onTabChange }) {
   const [step, setStep] = useState(1);
-  const [patient, setPatient] = useState({ name: '', age: '', gender: 'L' });
+  const [patient, setPatient] = useState({ name: '', age: '', gender: 'L', birth_date: '' });
   const [measurements, setMeasurements] = useState({ weight: '', height: '' });
   const [loadingAI, setLoadingAI] = useState(false);
   const [aiReady, setAiReady] = useState(false);
@@ -44,6 +44,21 @@ export default function ScreeningPage({ onSaveHistory, onTabChange }) {
     }
   }, [cameraActive, stream, currentArea]);
 
+  const calculateAgeInMonths = (birthDateStr) => {
+    if (!birthDateStr) return '';
+    const birthDate = new Date(birthDateStr);
+    const today = new Date();
+    
+    let months = (today.getFullYear() - birthDate.getFullYear()) * 12;
+    months -= birthDate.getMonth();
+    months += today.getMonth();
+    
+    if (today.getDate() < birthDate.getDate()) {
+      months--;
+    }
+    return Math.max(0, months);
+  };
+
   const getBMI = () => {
     const w = parseFloat(measurements.weight);
     const h = parseFloat(measurements.height) / 100;
@@ -73,7 +88,9 @@ export default function ScreeningPage({ onSaveHistory, onTabChange }) {
 
   const startCamera = async () => {
     try {
-      const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      const s = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'user', width: 640, height: 480 } 
+      });
       setStream(s);
       setCameraActive(true);
     } catch (err) {
@@ -117,6 +134,12 @@ export default function ScreeningPage({ onSaveHistory, onTabChange }) {
   };
 
   useEffect(() => {
+    if (cameraActive && stream && videoRef.current) {
+      videoRef.current.srcObject = stream;
+    }
+  }, [cameraActive, stream]);
+
+  useEffect(() => {
     if (step === 3) {
       setLoadingAI(true);
       const timer = setTimeout(() => {
@@ -129,7 +152,7 @@ export default function ScreeningPage({ onSaveHistory, onTabChange }) {
 
   const runAnalysis = () => {
     setAnalyzing(true);
-    setStep(5);
+    setStep(4);
     
     setTimeout(() => {
       const stunting = getStuntingStatus();
@@ -148,6 +171,7 @@ export default function ScreeningPage({ onSaveHistory, onTabChange }) {
         id: Date.now(),
         nama_anak: patient.name,
         usia_bulan: parseInt(patient.age),
+        jenis_kelamin: patient.gender,
         berat_badan: parseFloat(measurements.weight),
         tinggi_badan: parseFloat(measurements.height),
         status_stunting: stunting.includes('Stunting') ? 'Stunting' : 'Normal',
@@ -158,7 +182,10 @@ export default function ScreeningPage({ onSaveHistory, onTabChange }) {
           ? "Rujukan segera ke spesialis anak di RSUD terdekat untuk transfusi atau penanganan anemia mikrositik berat. Tingkatkan asupan makanan kaya besi."
           : anemia === 'Anemia Ringan'
           ? "Balita menunjukkan anemia ringan. Berikan suplemen drop besi, hati ayam haluskan, dan makanan tinggi protein."
-          : "Status kesehatan anak normal. Pertahankan gizi seimbang dan jadwal rutin Posyandu."
+          : "Status kesehatan anak normal. Pertahankan gizi seimbang dan jadwal rutin Posyandu.",
+        foto_muka: photos.muka,
+        foto_mata: photos.mata,
+        foto_kuku: photos.kuku
       };
 
       setReport(generatedReport);
@@ -173,9 +200,8 @@ export default function ScreeningPage({ onSaveHistory, onTabChange }) {
   const stepsList = [
     { num: 1, title: 'Profil Anak', desc: 'Nama, usia, jenis kelamin' },
     { num: 2, title: 'Berat & Tinggi', desc: 'Pengukuran tubuh & BMI' },
-    { num: 3, title: 'Persiapan AI', desc: 'Model ke perangkat lokal' },
-    { num: 4, title: 'Pengambilan Foto', desc: '3 foto untuk analisis' },
-    { num: 5, title: 'Hasil Screening', desc: 'Rekomendasi & laporan' }
+    { num: 3, title: 'Pengambilan Foto', desc: '3 foto untuk analisis' },
+    { num: 4, title: 'Hasil Screening', desc: 'Rekomendasi & laporan' }
   ];
 
   return (
@@ -184,13 +210,13 @@ export default function ScreeningPage({ onSaveHistory, onTabChange }) {
       <div className="w-full lg:w-[260px] sticky top-8 space-y-6">
         <div className="p-5 bg-white border border-nura-foreground/10 rounded-2xl">
           <div className="text-[11px] font-bold uppercase tracking-widest text-nura-muted-foreground">Screening Kesehatan</div>
-          <div className="text-xl font-extrabold text-nura-foreground mt-1">Langkah {Math.min(5, step)} dari 5</div>
+          <div className="text-xl font-extrabold text-nura-foreground mt-1">Langkah {Math.min(4, step)} dari 4</div>
           
           {/* Progress Bar */}
           <div className="w-full bg-nura-accent h-2 rounded-full mt-3 overflow-hidden">
             <div 
               className="bg-gradient-to-r from-nura-blue to-nura-teal h-full transition-all duration-300" 
-              style={{ width: `${(Math.min(5, step) / 5) * 100}%` }}
+              style={{ width: `${(Math.min(4, step) / 4) * 100}%` }}
             />
           </div>
 
@@ -294,7 +320,7 @@ export default function ScreeningPage({ onSaveHistory, onTabChange }) {
             report={report} 
             onReset={() => {
               setStep(1);
-              setPatient({ name: '', age: '', gender: 'L' });
+              setPatient({ name: '', age: '', gender: 'L', birth_date: '' });
               setMeasurements({ weight: '', height: '' });
               setPhotos({ muka: null, mata: null, kuku: null });
               setReport(null);
@@ -302,7 +328,6 @@ export default function ScreeningPage({ onSaveHistory, onTabChange }) {
             onTabChange={onTabChange} 
           />
         )}
-
       </div>
     </div>
   );

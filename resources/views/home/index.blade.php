@@ -19,9 +19,16 @@
     <div id="root"></div>
 
     <script>
-        window.GIZIKU_PROVINCES = @json($provinces);
-        window.USER_NAME = "{{ auth()->user()->name ?? 'Demo Catin' }}";
-        window.USER_EMAIL = "{{ auth()->user()->email ?? 'demo@catinguard.id' }}";
+        window.GIZIKU_PROVINCES = {!! json_encode($provinces) !!};
+        window.USER = {!! auth()->check() ? json_encode([
+            'id' => auth()->id(),
+            'name' => auth()->user()->name,
+            'email' => auth()->user()->email,
+            'role_id' => auth()->user()->role_id,
+            'role_name' => auth()->user()->role->name ?? 'user'
+        ]) : 'null' !!};
+        window.MENTAL_HISTORY = {!! json_encode($mentalHistory ?? []) !!};
+        window.INITIAL_TAB = "{{ $initialTab ?? 'home' }}";
     </script>
 </body>
 </html>

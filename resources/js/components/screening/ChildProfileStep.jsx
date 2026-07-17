@@ -1,6 +1,21 @@
 import React from 'react';
 
 export default function ChildProfileStep({ patient, setPatient, onNext }) {
+  const calculateAgeInMonths = (birthDateStr) => {
+    if (!birthDateStr) return '';
+    const birthDate = new Date(birthDateStr);
+    const today = new Date();
+    
+    let months = (today.getFullYear() - birthDate.getFullYear()) * 12;
+    months -= birthDate.getMonth();
+    months += today.getMonth();
+    
+    if (today.getDate() < birthDate.getDate()) {
+      months--;
+    }
+    return Math.max(0, months);
+  };
+
   const isFormValid = patient.name.trim() && patient.age.toString().trim();
 
   return (
@@ -32,15 +47,23 @@ export default function ChildProfileStep({ patient, setPatient, onNext }) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-nura-muted-foreground mb-2">
-                Usia (bulan)
+              <label className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-nura-muted-foreground mb-2">
+                <span>Tanggal Lahir</span>
+                {patient.age !== '' && (
+                  <span className="text-[10px] text-nura-blue normal-case font-bold bg-nura-accent px-2 py-0.5 rounded-md">
+                    {patient.age} Bulan
+                  </span>
+                )}
               </label>
               <input 
-                type="number" 
-                value={patient.age} 
-                onChange={(e) => setPatient(prev => ({ ...prev, age: e.target.value }))}
+                type="date" 
+                value={patient.birth_date || ''} 
+                onChange={(e) => {
+                  const dateVal = e.target.value;
+                  const monthsVal = calculateAgeInMonths(dateVal);
+                  setPatient(prev => ({ ...prev, birth_date: dateVal, age: monthsVal }));
+                }}
                 className="w-full h-[52px] px-4 py-3 text-xs bg-slate-50 border border-slate-200 focus:border-nura-blue focus:bg-white focus:outline-none rounded-2xl text-nura-foreground font-semibold placeholder:text-slate-350 transition-all" 
-                placeholder="mis. 24" 
               />
             </div>
             <div>
