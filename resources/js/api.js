@@ -40,13 +40,71 @@ function getMockDataFor(endpoint, options) {
   // Educational articles on child health and stunting
   if (endpoint.startsWith('/education')) {
     return [
-      { id: 1, judul: 'Mengenal Anemia dan Stunting pada Balita', ringkasan: 'Bagaimana anemia kronis dapat memicu stunting pada tumbuh kembang anak?', konten: 'Anemia defisiensi besi pada balita menghambat pasokan oksigen ke seluruh sel tubuh, termasuk sel otak dan organ pertumbuhan. Akibatnya, anak sering lemas, nafsu makan menurun drastis, dan rentan infeksi. Jika dibiarkan dalam jangka panjang, kondisi ini mengganggu hormon pertumbuhan dan memicu stunting (anak lebih pendek dari usianya). Deteksi dini melalui rona kuku, kelopak mata, dan pengukuran tinggi badan sangat penting.', kategori: 'Gizi & Tumbuh Kembang', tipe: 'artikel' },
-      { id: 2, judul: 'Pola Makan Sehat Pencegah Kurang Gizi', ringkasan: 'Asupan nutrisi esensial bagi tumbuh kembang emas anak.', konten: 'Masa 1000 Hari Pertama Kehidupan (HPK) adalah masa emas pertumbuhan anak. Berikan ASI eksklusif selama 6 bulan pertama, dilanjutkan MPASI kaya zat besi, asam folat, zinc, dan protein hewani (telur, ikan, daging). Hindari pemberian makanan manis berlebihan yang dapat menurunkan nafsu makan anak terhadap makanan bergizi seimbang.', kategori: 'Nutrisi Anak', tipe: 'artikel' },
-      { id: 3, judul: 'Kuis Edukasi Kesehatan Anak NURA', ringkasan: 'Evaluasi pemahaman Anda seputar stunting, anemia, dan nutrisi si kecil.', tipe: 'kuis', quiz_data: [
-        { question: 'Apa dampak utama anemia defisiensi besi kronis pada anak?', options: ['Gigi cepat tumbuh', 'Menurunkan kecerdasan dan memicu stunting', 'Tidak berdampak serius'], correct: 1 },
-        { question: 'Bahan makanan apa yang paling tinggi kandungan zat besi hewani untuk balita?', options: ['Sayur bayam rebus', 'Hati ayam dan daging sapi', 'Nasi putih hangat'], correct: 1 },
-        { question: 'Berapa lama periode emas 1000 Hari Pertama Kehidupan (HPK) dihitung?', options: ['Sejak konsepsi di rahim hingga anak usia 2 tahun', 'Sejak bayi lahir hingga usia 1 tahun', 'Usia 2 hingga 5 tahun'], correct: 0 }
-      ]}
+      { 
+        id: 1, 
+        judul: 'Makanan Kaya Zat Besi untuk Mencegah Anemia', 
+        ringkasan: 'Kenali sumber zat besi dari bahan pangan lokal yang mudah dijangkau dan terjangkau.', 
+        konten: 'Anemia defisiensi besi pada balita menghambat pasokan oksigen ke seluruh sel tubuh, termasuk sel otak dan organ pertumbuhan. Akibatnya, anak sering lemas, nafsu makan menurun drastis, dan rentan infeksi. Jika dibiarkan dalam jangka panjang, kondisi ini mengganggu hormon pertumbuhan dan memicu stunting (anak lebih pendek dari usianya). Deteksi dini melalui rona kuku, kelopak mata, dan pengukuran tinggi badan sangat penting.', 
+        kategori: 'Gizi & Nutrisi', 
+        durasi: '5 menit',
+        tipe: 'artikel' 
+      },
+      { 
+        id: 2, 
+        judul: 'Tanda Stunting dan Dampaknya pada Tumbuh Kembang', 
+        ringkasan: 'Memahami perbedaan stunting dan wasting serta cara deteksi dini di rumah.', 
+        konten: 'Stunting adalah gangguan tumbuh kembang anak akibat kekurangan gizi kronis dan infeksi berulang. Gejalanya ditandai dengan tinggi badan anak di bawah standar usianya. Wasting adalah kondisi gizi buruk di mana berat badan anak menurun drastis dibanding tinggi badannya. Perawatan sejak dini di masa keemasan 1000 HPK dapat mencegah efek stunting yang permanen terhadap kecerdasan anak.', 
+        kategori: 'Kesehatan Mental', 
+        durasi: '7 menit',
+        tipe: 'artikel' 
+      },
+      { 
+        id: 3, 
+        judul: 'Panduan Pemberian ASI Eksklusif 0–6 Bulan', 
+        ringkasan: 'Manfaat, posisi, dan cara menyimpan ASI yang benar untuk ibu dan bayi.', 
+        konten: 'ASI eksklusif diberikan sejak bayi lahir hingga berusia 6 bulan tanpa makanan pendamping apa pun. ASI mengandung nutrisi terbaik dan zat kekebalan tubuh alami yang melindungi bayi dari diare dan infeksi. Posisi menyusui yang benar dan kenyamanan ibu sangat menentukan kelancaran produksi ASI. Pelajari cara memerah dan menyimpan ASI perah (ASIP) agar nutrisi tetap terjaga.', 
+        kategori: 'Gizi & Nutrisi', 
+        durasi: '8 menit',
+        tipe: 'artikel' 
+      },
+      { 
+        id: 4, 
+        judul: 'Stimulasi Tumbuh Kembang Anak Usia 1–3 Tahun', 
+        ringkasan: 'Aktivitas sederhana untuk mendukung perkembangan motorik dan kognitif anak.', 
+        konten: 'Tumbuh kembang anak tidak hanya fisik tetapi juga motorik, sensorik, dan kognitif. Anak usia 1-3 tahun memerlukan stimulasi aktif seperti bermain susun balok, bernyanyi bersama, mengenalkan warna, dan membacakan buku cerita. Aktivitas interaktif ini memperkuat sinapsis sel otak anak dan membangun kedekatan emosional (bonding) yang kuat antara orang tua dan anak.', 
+        kategori: 'Kesehatan Mental', 
+        durasi: '6 menit',
+        tipe: 'artikel' 
+      },
+      { 
+        id: 5, 
+        judul: 'Menu Sehat Bergizi Seimbang untuk Balita', 
+        ringkasan: 'Inspirasi menu harian untuk memenuhi kebutuhan gizi anak usia 1–5 tahun.', 
+        konten: 'Menu MPASI dan makanan balita sebaiknya padat gizi mikro dan makro. Fokuskan pada protein hewani yang berkualitas seperti hati ayam, telur, daging sapi, dan ikan kembung. Protein hewani kaya akan asam amino esensial dan zat besi yang mudah diserap oleh tubuh anak. Padukan dengan sayuran hijau, tahu, tempe, dan buah dalam porsi seimbang.', 
+        kategori: 'Gizi & Nutrisi', 
+        durasi: '4 menit',
+        tipe: 'artikel' 
+      },
+      { 
+        id: 6, 
+        judul: 'Cara Mengenali Tanda Depresi Pascamelahirkan', 
+        ringkasan: 'Panduan untuk keluarga mendampingi ibu baru yang mengalami baby blues.', 
+        konten: 'Depresi pascamelahirkan (postpartum depression) adalah kondisi emosional serius setelah melahirkan. Ibu mungkin merasa cemas berlebih, sedih tanpa sebab, merasa tidak mampu mengurus bayi, hingga insomnia. Penting bagi suami dan keluarga untuk memberikan dukungan moral penuh, berbagi beban merawat bayi, serta berkonsultasi dengan profesional jika gejala berlangsung lebih dari dua minggu.', 
+        kategori: 'Kesehatan Mental', 
+        durasi: '9 menit',
+        tipe: 'artikel' 
+      },
+      { 
+        id: 7, 
+        judul: 'Kuis Edukasi Kesehatan Anak NURA', 
+        ringkasan: 'Evaluasi pemahaman Anda seputar stunting, anemia, dan nutrisi si kecil.', 
+        tipe: 'kuis', 
+        quiz_data: [
+          { question: 'Apa dampak utama anemia defisiensi besi kronis pada anak?', options: ['Gigi cepat tumbuh', 'Menurunkan kecerdasan dan memicu stunting', 'Tidak berdampak serius'], correct: 1 },
+          { question: 'Bahan makanan apa yang paling tinggi kandungan zat besi hewani untuk balita?', options: ['Sayur bayam rebus', 'Hati ayam dan daging sapi', 'Nasi putih hangat'], correct: 1 },
+          { question: 'Berapa lama periode emas 1000 Hari Pertama Kehidupan (HPK) dihitung?', options: ['Sejak konsepsi di rahim hingga anak usia 2 tahun', 'Sejak bayi lahir hingga usia 1 tahun', 'Usia 2 hingga 5 tahun'], correct: 0 }
+        ]
+      }
     ];
   }
 

@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
+import { 
+  Clock, 
+  Apple, 
+  Brain, 
+  Heart, 
+  Baby, 
+  Utensils, 
+  Smile, 
+  BookOpen, 
+  ChevronLeft 
+} from 'lucide-react';
 
 export default function EdukasiPage() {
   const [articles, setArticles] = useState([]);
@@ -43,49 +54,123 @@ export default function EdukasiPage() {
     setQuizScore(null);
   };
 
-  if (loading) return <div className="flex items-center justify-center p-12"><div className="w-8 h-8 border-3 border-nura-blue border-t-transparent rounded-full animate-spin"></div></div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <div className="w-8 h-8 border-3 border-nura-blue border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   const filteredArticles = filterType === 'Semua'
     ? articles.filter(a => a.tipe === 'artikel')
     : articles.filter(a => a.tipe === 'artikel' && a.kategori === filterType);
 
+  // Style mapper to match Image 5 aesthetics
+  const getCategoryStyles = (category, id) => {
+    if (category === 'Gizi & Nutrisi') {
+      if (id === 1) {
+        return {
+          bg: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+          iconBg: 'bg-emerald-100 text-emerald-600',
+          dot: 'bg-emerald-500',
+          icon: <Apple className="w-4 h-4" />
+        };
+      }
+      if (id === 3) {
+        return {
+          bg: 'bg-rose-50 text-rose-600 border-rose-100',
+          iconBg: 'bg-rose-100 text-rose-600',
+          dot: 'bg-rose-500',
+          icon: <Heart className="w-4 h-4" />
+        };
+      }
+      if (id === 5) {
+        return {
+          bg: 'bg-amber-50 text-amber-600 border-amber-100',
+          iconBg: 'bg-amber-100 text-amber-600',
+          dot: 'bg-amber-500',
+          icon: <Utensils className="w-4 h-4" />
+        };
+      }
+      return {
+        bg: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+        iconBg: 'bg-emerald-100 text-emerald-600',
+        dot: 'bg-emerald-500',
+        icon: <Apple className="w-4 h-4" />
+      };
+    } else { // Kesehatan Mental
+      if (id === 2) {
+        return {
+          bg: 'bg-purple-50 text-purple-600 border-purple-100',
+          iconBg: 'bg-purple-100 text-purple-600',
+          dot: 'bg-purple-500',
+          icon: <Brain className="w-4 h-4" />
+        };
+      }
+      if (id === 4) {
+        return {
+          bg: 'bg-blue-50 text-blue-600 border-blue-100',
+          iconBg: 'bg-blue-100 text-blue-600',
+          dot: 'bg-blue-500',
+          icon: <Baby className="w-4 h-4" />
+        };
+      }
+      if (id === 6) {
+        return {
+          bg: 'bg-purple-50 text-purple-600 border-purple-100',
+          iconBg: 'bg-purple-100 text-purple-600',
+          dot: 'bg-purple-500',
+          icon: <Smile className="w-4 h-4" />
+        };
+      }
+      return {
+        bg: 'bg-purple-50 text-purple-600 border-purple-100',
+        iconBg: 'bg-purple-100 text-purple-600',
+        dot: 'bg-purple-500',
+        icon: <Brain className="w-4 h-4" />
+      };
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto w-full">
-      {/* Brand Gradient Banner */}
-      <div 
-        className="relative overflow-hidden rounded-[24px] p-6 md:p-8 text-white shadow-none"
-        style={{ background: 'linear-gradient(135deg, #1b5be8 0%, #0f3fa3 100%)' }}
-      >
-        <div className="text-[11px] font-bold uppercase tracking-widest text-blue-200">Hub Literasi</div>
-        <h2 className="text-2xl md:text-[28px] font-extrabold tracking-tight mt-1">Edukasi & Literasi Orang Tua</h2>
-        <p className="text-blue-100 text-xs mt-2 max-w-2xl font-medium">Pelajari gizi anak, MPASI sehat, pencegahan stunting, serta uji pemahaman Anda.</p>
-      </div>
-
       {selectedArticle ? (
-        <div className="bg-white border border-nura-foreground/10 rounded-2xl p-6 space-y-4 animate-fadeIn">
+        <div className="bg-white border border-nura-foreground/10 rounded-2xl p-6 md:p-8 space-y-4 animate-fadeIn">
           <button 
             onClick={() => setSelectedArticle(null)} 
-            className="h-[44px] px-6 text-xs font-bold rounded-2xl bg-nura-muted text-nura-muted-foreground hover:bg-slate-200/80 transition-all active:scale-[0.98]"
+            className="h-[44px] px-6 text-xs font-bold rounded-2xl bg-nura-muted text-nura-muted-foreground hover:bg-slate-200/80 transition-all flex items-center gap-2 active:scale-[0.98]"
           >
-            ← Kembali
+            <ChevronLeft className="w-4 h-4" /> Kembali
           </button>
-          <div className="border-b border-nura-muted pb-3.5 mt-2">
-            <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-nura-accent text-nura-blue border border-nura-blue/15">{selectedArticle.kategori}</span>
-            <h3 className="text-lg font-extrabold text-nura-foreground mt-2.5">{selectedArticle.judul}</h3>
+          
+          <div className="border-b border-nura-muted pb-4 mt-2">
+            <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-nura-accent text-nura-blue border border-nura-blue/15">
+              {selectedArticle.kategori}
+            </span>
+            <h3 className="text-xl font-extrabold text-nura-foreground mt-3">{selectedArticle.judul}</h3>
+            <div className="flex items-center gap-1 text-[10px] text-nura-muted-foreground mt-1.5 font-bold">
+              <Clock className="w-3.5 h-3.5" />
+              <span>Estimasi baca: {selectedArticle.durasi}</span>
+            </div>
           </div>
-          <p className="text-xs text-nura-foreground/80 leading-relaxed whitespace-pre-wrap font-semibold">{selectedArticle.konten}</p>
+          
+          <p className="text-xs text-nura-foreground/85 leading-relaxed whitespace-pre-wrap font-semibold font-sans pt-2">
+            {selectedArticle.konten}
+          </p>
         </div>
       ) : activeQuiz ? (
-        <div className="bg-white border border-nura-foreground/10 rounded-2xl p-6 space-y-4 animate-fadeIn">
+        <div className="bg-white border border-nura-foreground/10 rounded-2xl p-6 md:p-8 space-y-4 animate-fadeIn">
           <button 
             onClick={() => setActiveQuiz(null)} 
-            className="h-[44px] px-6 text-xs font-bold rounded-2xl bg-nura-muted text-nura-muted-foreground hover:bg-slate-200/80 transition-all active:scale-[0.98]"
+            className="h-[44px] px-6 text-xs font-bold rounded-2xl bg-nura-muted text-nura-muted-foreground hover:bg-slate-200/80 transition-all flex items-center gap-2 active:scale-[0.98]"
           >
-            ← Kembali
+            <ChevronLeft className="w-4 h-4" /> Kembali
           </button>
-          <div className="border-b border-nura-muted pb-3 mt-2">
-            <h3 className="text-base font-bold text-nura-foreground">Kuis Pemahaman Kesehatan Anak</h3>
-            <p className="text-xs text-nura-muted-foreground mt-1 font-semibold">Tersimpan di memori perangkat</p>
+          
+          <div className="border-b border-nura-muted pb-4 mt-2">
+            <h3 className="text-lg font-extrabold text-nura-foreground">Kuis Pemahaman Kesehatan Anak</h3>
+            <p className="text-xs text-nura-muted-foreground mt-1 font-semibold">Uji pemahaman Anda seputar nutrisi, anemia, dan pencegahan stunting secara mandiri.</p>
           </div>
 
           <div className="space-y-4">
@@ -126,7 +211,11 @@ export default function EdukasiPage() {
             <button 
               onClick={() => submitQuiz(activeQuiz.quiz_data)} 
               disabled={Object.keys(quizAnswers).length < activeQuiz.quiz_data.length}
-              className={`w-full h-[48px] text-xs font-bold rounded-2xl transition-all ${Object.keys(quizAnswers).length < activeQuiz.quiz_data.length ? 'bg-slate-350 text-white cursor-default' : 'bg-nura-blue text-white hover:opacity-90 active:scale-[0.98]'}`}
+              className={`w-full h-[48px] text-xs font-bold rounded-2xl transition-all ${
+                Object.keys(quizAnswers).length < activeQuiz.quiz_data.length 
+                  ? 'bg-slate-300 text-white cursor-default' 
+                  : 'bg-nura-blue text-white hover:opacity-90 active:scale-[0.98]'
+              }`}
             >
               Kirim Jawaban
             </button>
@@ -135,62 +224,116 @@ export default function EdukasiPage() {
               <span className="text-[10px] font-bold uppercase tracking-widest text-nura-muted-foreground block">Skor Evaluasi Kuis</span>
               <div className="text-3xl font-black font-mono text-nura-blue">{quizScore}%</div>
               <p className="text-xs text-nura-muted-foreground max-w-sm mx-auto font-semibold">
-                {quizScore >= 80 ? 'Hebat! Anda memiliki pemahaman yang matang mengenai asupan gizi pencegah anemia dan stunting anak.' : 'Kami merekomendasikan Anda untuk membaca kembali materi edukasi di atas agar pemantauan si kecil semakin optimal.'}
+                {quizScore >= 80 
+                  ? 'Hebat! Anda memiliki pemahaman yang matang mengenai asupan gizi pencegah anemia dan stunting anak.' 
+                  : 'Kami merekomendasikan Anda untuk membaca kembali materi edukasi di atas agar pemantauan si kecil semakin optimal.'}
               </p>
-              <button onClick={() => startQuiz(activeQuiz)} className="mt-2 px-4 py-2.5 text-xs font-bold rounded-xl border border-nura-foreground/10 bg-white text-nura-foreground hover:bg-slate-50 transition-all">Ulangi Kuis</button>
+              <button 
+                onClick={() => startQuiz(activeQuiz)} 
+                className="mt-2 px-5 py-2.5 text-xs font-bold rounded-xl border border-nura-foreground/10 bg-white text-nura-foreground hover:bg-slate-50 transition-all active:scale-[0.98]"
+              >
+                Ulangi Kuis
+              </button>
             </div>
           )}
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Tab Filter Chips (Design System §6.6 / §6.14) */}
-          <div className="flex flex-wrap gap-2 p-1.5 bg-nura-muted border border-nura-foreground/5 rounded-full w-max">
-            {['Semua', 'Gizi & Tumbuh Kembang', 'Nutrisi Anak'].map(type => (
+          {/* Header Typography matching screenshot */}
+          <div>
+            <h2 className="text-2xl md:text-[28px] font-black text-nura-foreground tracking-tight">Edukasi & Literasi</h2>
+            <p className="text-nura-muted-foreground text-xs font-semibold mt-1">Pelajari materi kesehatan gizi dan mental anak yang telah dikurasi oleh tim ahli.</p>
+          </div>
+
+          {/* Tab Filter Chips */}
+          <div className="flex flex-wrap gap-2 p-1 bg-slate-100 rounded-full w-max">
+            {['Semua', 'Gizi & Nutrisi', 'Kesehatan Mental'].map(type => (
               <button
                 key={type}
                 onClick={() => setFilterType(type)}
-                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${filterType === type ? 'bg-white text-nura-blue shadow-sm' : 'text-nura-muted-foreground hover:text-nura-foreground'}`}
+                className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${
+                  filterType === type 
+                    ? 'bg-nura-blue text-white shadow-sm' 
+                    : 'text-nura-muted-foreground hover:text-nura-foreground'
+                }`}
               >
                 {type}
               </button>
             ))}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Desktop Articles Grid (grid-cols-3 if standalone, or grid-cols-2) */}
-            <div className="lg:col-span-2 space-y-4">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-nura-muted-foreground mb-3">Artikel Edukasi</h3>
-              {filteredArticles.map(a => (
-                <div key={a.id} className="p-5 bg-white border border-nura-foreground/10 rounded-2xl flex flex-col justify-between hover:border-nura-blue/20 hover:shadow-md transition-all">
-                  <div>
-                    <span className="px-3 py-1 rounded-full text-[9px] font-bold uppercase bg-nura-accent text-nura-blue border border-nura-blue/15">{a.kategori}</span>
-                    <h4 className="text-sm font-extrabold text-nura-foreground mt-3">{a.judul}</h4>
-                    <p className="text-xs text-nura-muted-foreground mt-1.5 font-semibold leading-relaxed">{a.ringkasan}</p>
-                  </div>
-                  <button onClick={() => setSelectedArticle(a)} className="text-xs text-nura-blue hover:opacity-80 font-bold self-start mt-4 flex items-center gap-1">
-                    Baca Artikel ➔
-                  </button>
-                </div>
-              ))}
-            </div>
+          {/* Grid of Articles */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredArticles.map(a => {
+              const styles = getCategoryStyles(a.kategori, a.id);
+              return (
+                <div 
+                  key={a.id} 
+                  className="bg-white border border-nura-foreground/10 rounded-2xl p-5 hover:shadow-lg hover:border-nura-blue/20 transition-all flex flex-col justify-between"
+                >
+                  <div className="space-y-3">
+                    {/* Category Pill with Icon and Dot */}
+                    <div className="flex items-center justify-between">
+                      <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-bold uppercase border ${styles.bg}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${styles.dot}`}></span>
+                        <span>{a.kategori === 'Gizi & Nutrisi' ? 'Gizi' : 'Kesehatan Mental'}</span>
+                      </div>
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center ${styles.iconBg}`}>
+                        {styles.icon}
+                      </div>
+                    </div>
 
-            {/* Quiz side cards */}
-            <div className="space-y-6">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-nura-muted-foreground mb-3">Evaluasi Mandiri</h3>
-              {articles.filter(a => a.tipe === 'kuis').map(a => (
-                <div key={a.id} className="p-5 bg-white border border-nura-foreground/10 rounded-2xl space-y-4 text-center shadow-sm">
-                  <span className="text-3xl block">📝</span>
-                  <h4 className="text-sm font-extrabold text-nura-foreground">Kuis Kesiapan Kesehatan Anak</h4>
-                  <p className="text-xs text-nura-muted-foreground leading-relaxed font-semibold">Uji tingkat kepedulian & pemahaman tumbuh kembang emas.</p>
-                  <button 
-                    onClick={() => startQuiz(a)} 
-                    className="w-full h-[48px] text-xs font-bold rounded-2xl bg-nura-blue hover:opacity-90 text-white font-bold transition-all shadow-md shadow-nura-blue/10"
-                  >
-                    Mulai Kuis
-                  </button>
+                    <h4 className="text-xs font-extrabold text-nura-foreground leading-snug line-clamp-2">
+                      {a.judul}
+                    </h4>
+                    <p className="text-[10px] text-nura-muted-foreground font-semibold leading-relaxed line-clamp-3">
+                      {a.ringkasan}
+                    </p>
+                  </div>
+
+                  {/* Card Footer */}
+                  <div className="flex items-center justify-between border-t border-slate-100 pt-4 mt-5 text-[10px] font-bold">
+                    <div className="flex items-center gap-1 text-slate-400">
+                      <Clock className="w-3.5 h-3.5 text-slate-400" />
+                      <span>{a.durasi}</span>
+                    </div>
+                    <button 
+                      onClick={() => setSelectedArticle(a)} 
+                      className="text-nura-blue hover:opacity-80 transition-opacity flex items-center gap-1"
+                    >
+                      Baca Selengkapnya ➔
+                    </button>
+                  </div>
                 </div>
-              ))}
-            </div>
+              );
+            })}
+
+            {/* Kuis / Evaluation Card inside Grid */}
+            {filterType === 'Semua' && (
+              <div className="bg-gradient-to-tr from-nura-blue to-nura-blue/90 text-white rounded-2xl p-5 flex flex-col justify-between shadow-lg shadow-nura-blue/15 hover:scale-[1.005] transition-all">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="px-3 py-1 rounded-full text-[9px] font-bold uppercase bg-white/20 text-white">
+                      Evaluasi
+                    </span>
+                    <span className="text-xl">📝</span>
+                  </div>
+                  <h4 className="text-xs font-extrabold leading-snug">
+                    Kuis Kesiapan Kesehatan Anak
+                  </h4>
+                  <p className="text-[10px] text-blue-100 font-semibold leading-relaxed">
+                    Uji tingkat kepedulian & pemahaman tumbuh kembang emas anak di rumah secara offline.
+                  </p>
+                </div>
+                
+                <button 
+                  onClick={() => startQuiz(articles.find(a => a.tipe === 'kuis'))} 
+                  className="mt-6 w-full h-[44px] text-xs font-bold bg-white text-nura-blue rounded-xl hover:bg-slate-50 active:scale-[0.98] transition-all"
+                >
+                  Mulai Kuis ➔
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
