@@ -21,11 +21,16 @@ export default function ScreeningPage({ onSaveHistory }) {
   const videoRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  const getBMIStatus = () => {
+  const getBMI = () => {
     const w = parseFloat(measurements.weight);
     const h = parseFloat(measurements.height) / 100;
-    if (!w || !h) return 'Belum dihitung';
-    const bmi = w / (h * h);
+    if (!w || !h) return 0;
+    return (w / (h * h)).toFixed(1);
+  };
+
+  const getBMIStatus = () => {
+    const bmi = parseFloat(getBMI());
+    if (!bmi) return 'Belum dihitung';
     if (bmi < 14) return 'Gizi Kurang (Wasting)';
     if (bmi > 18) return 'Gizi Lebih';
     return 'Gizi Baik (Normal)';
@@ -36,7 +41,6 @@ export default function ScreeningPage({ onSaveHistory }) {
     const h = parseFloat(measurements.height) || 0;
     if (!age || !h) return 'Belum dihitung';
     
-    // Simple mock stunting logic based on standard WHO guidelines
     if (age <= 12 && h < 68) return 'Sangat Pendek (Severely Stunting)';
     if (age <= 12 && h < 71) return 'Pendek (Stunting)';
     if (age > 12 && age <= 24 && h < 78) return 'Pendek (Stunting)';
@@ -44,7 +48,6 @@ export default function ScreeningPage({ onSaveHistory }) {
     return 'Tinggi Normal';
   };
 
-  // Start Camera
   const startCamera = async () => {
     try {
       const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
@@ -54,11 +57,10 @@ export default function ScreeningPage({ onSaveHistory }) {
       }
       setCameraActive(true);
     } catch (err) {
-      alert("Kamera tidak dapat diakses. Silakan unggah foto secara manual.");
+      alert("Kamera tidak dapat diakses. Silakan pilih berkas foto dari perangkat Anda.");
     }
   };
 
-  // Stop Camera
   const stopCamera = () => {
     if (stream) {
       stream.getTracks().forEach(track => track.stop());
@@ -67,7 +69,6 @@ export default function ScreeningPage({ onSaveHistory }) {
     setCameraActive(false);
   };
 
-  // Capture Photo
   const capturePhoto = () => {
     if (!videoRef.current) return;
     const canvas = document.createElement('canvas');
@@ -75,7 +76,6 @@ export default function ScreeningPage({ onSaveHistory }) {
     canvas.height = 480;
     const ctx = canvas.getContext('2d');
     
-    // Mirror image for front camera feel
     ctx.translate(canvas.width, 0);
     ctx.scale(-1, 1);
     ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
@@ -85,7 +85,6 @@ export default function ScreeningPage({ onSaveHistory }) {
     stopCamera();
   };
 
-  // File Upload fallback
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -97,7 +96,6 @@ export default function ScreeningPage({ onSaveHistory }) {
     }
   };
 
-  // Trigger simulated AI model download
   useEffect(() => {
     if (step === 3) {
       setLoadingAI(true);
@@ -109,19 +107,15 @@ export default function ScreeningPage({ onSaveHistory }) {
     }
   }, [step]);
 
-  // Run final AI Analysis
   const runAnalysis = () => {
     setAnalyzing(true);
     setStep(5);
     
-    // Simulate server/AI analysis delay
     setTimeout(() => {
-      const bmi = getBMIStatus();
       const stunting = getStuntingStatus();
       let anemia = 'Normal';
       let urgency = 'Rendah';
       
-      // Determine simulated anemia/urgency based on eyes/nails or name indicators for demo
       if (patient.name.toLowerCase().includes('rara') || patient.name.toLowerCase().includes('putri')) {
         anemia = 'Anemia Berat';
         urgency = 'Tinggi';
@@ -131,7 +125,6 @@ export default function ScreeningPage({ onSaveHistory }) {
       }
 
       const generatedReport = {
-        success: true,
         id: Date.now(),
         nama_anak: patient.name,
         usia_bulan: parseInt(patient.age),
@@ -142,7 +135,7 @@ export default function ScreeningPage({ onSaveHistory }) {
         tanggal: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
         level_urgensi: urgency,
         catatan: anemia === 'Anemia Berat' 
-          ? "Rujukan segera ke RSUD terdekat untuk transfusi atau penanganan anemia mikrositik berat. Tingkatkan asupan makanan kaya besi."
+          ? "Rujukan segera ke spesialis anak di RSUD terdekat untuk transfusi atau penanganan anemia mikrositik berat. Tingkatkan asupan makanan kaya besi."
           : anemia === 'Anemia Ringan'
           ? "Balita menunjukkan anemia ringan. Berikan suplemen drop besi, hati ayam haluskan, dan makanan tinggi protein."
           : "Status kesehatan anak normal. Pertahankan gizi seimbang dan jadwal rutin Posyandu."
@@ -151,7 +144,6 @@ export default function ScreeningPage({ onSaveHistory }) {
       setReport(generatedReport);
       setAnalyzing(false);
       
-      // Save directly to global history array
       if (onSaveHistory) {
         onSaveHistory(generatedReport);
       }
@@ -167,108 +159,114 @@ export default function ScreeningPage({ onSaveHistory }) {
   ];
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-      {/* Left Stepper Panel */}
-      <div className="p-6 bg-white border border-slate-200 rounded-2xl space-y-6">
-        <div>
-          <h3 className="text-base font-black text-slate-800">Screening Kesehatan</h3>
-          <div className="text-xs text-slate-400 font-bold mt-1">Langkah {Math.min(5, step)} dari 5</div>
+    <div className="flex flex-col lg:flex-row gap-8 items-start max-w-6xl mx-auto w-full">
+      {/* Left Stepper Column (260px fixed width on desktop) */}
+      <div className="w-full lg:w-[260px] sticky top-8 space-y-6">
+        <div className="p-5 bg-white border border-nura-foreground/10 rounded-2xl">
+          <div className="text-[11px] font-bold uppercase tracking-widest text-nura-muted-foreground">Screening Kesehatan</div>
+          <div className="text-xl font-extrabold text-nura-foreground mt-1">Langkah {Math.min(5, step)} dari 5</div>
           
-          {/* Progress Bar */}
-          <div className="w-full bg-slate-100 h-1.5 rounded-full mt-3 overflow-hidden">
+          {/* Progress Bar (Tailwind v4 theme colors) */}
+          <div className="w-full bg-nura-accent h-2 rounded-full mt-3 overflow-hidden">
             <div 
-              className="bg-blue-600 h-full transition-all duration-300" 
+              className="bg-gradient-to-r from-nura-blue to-nura-teal h-full transition-all duration-300" 
               style={{ width: `${(Math.min(5, step) / 5) * 100}%` }}
             />
           </div>
+
+          {/* Stepper Items */}
+          <nav className="space-y-4 mt-6">
+            {stepsList.map(s => {
+              const isActive = step === s.num;
+              const isCompleted = step > s.num;
+              
+              let numStyle = 'bg-nura-muted text-nura-muted-foreground';
+              let titleStyle = 'text-nura-muted-foreground font-semibold';
+              let rowStyle = '';
+              
+              if (isActive) {
+                numStyle = 'bg-nura-blue text-white';
+                titleStyle = 'text-nura-foreground font-extrabold';
+                rowStyle = 'bg-nura-accent/50 p-2 -mx-2 rounded-xl';
+              } else if (isCompleted) {
+                numStyle = 'bg-nura-green text-white';
+                titleStyle = 'text-nura-foreground font-bold';
+              }
+              
+              return (
+                <div key={s.num} className={`flex gap-3 items-center transition-all ${rowStyle}`}>
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${numStyle}`}>
+                    {isCompleted ? '✓' : s.num}
+                  </div>
+                  <div className="min-w-0">
+                    <div className={`text-xs ${titleStyle}`}>{s.title}</div>
+                    <div className="text-[10px] text-nura-muted-foreground leading-none font-semibold mt-0.5">{s.desc}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </nav>
         </div>
 
-        {/* Stepper Steps List */}
-        <nav className="space-y-4">
-          {stepsList.map(s => {
-            const isActive = step === s.num;
-            const isCompleted = step > s.num;
-            
-            let numBg = 'bg-slate-100 text-slate-400';
-            let titleColor = 'text-slate-400';
-            
-            if (isActive) {
-              numBg = 'bg-blue-600 text-white';
-              titleColor = 'text-slate-800 font-extrabold';
-            } else if (isCompleted) {
-              numBg = 'bg-emerald-100 text-emerald-600';
-              titleColor = 'text-slate-600 font-bold';
-            }
-            
-            return (
-              <div key={s.num} className="flex gap-4 items-start">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${numBg}`}>
-                  {isCompleted ? '✓' : s.num}
-                </div>
-                <div className="min-w-0">
-                  <div className={`text-xs ${titleColor}`}>{s.title}</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5 leading-none">{s.desc}</div>
-                </div>
-              </div>
-            );
-          })}
-        </nav>
-
-        {/* Offline AI Box */}
-        <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center gap-2 text-emerald-700">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-          <span className="text-[10px] font-black uppercase tracking-wider">Analisis berjalan lokal · Offline</span>
+        {/* Offline Badge */}
+        <div className="p-4 bg-[#e8f5f4] rounded-xl flex items-center gap-2.5 text-[#2d6b66]">
+          <span className="w-2.5 h-2.5 rounded-full bg-nura-teal animate-pulse shrink-0"></span>
+          <div className="text-xs font-bold leading-tight">
+            Mode Offline Aktif
+            <span className="block text-[9px] text-[#2d6b66]/80 font-medium mt-0.5">AI berjalan lokal di perangkat</span>
+          </div>
         </div>
       </div>
 
-      {/* Right Content Panel */}
-      <div className="lg:col-span-2 p-6 bg-white border border-slate-200 rounded-2xl min-h-96 flex flex-col justify-between">
+      {/* Right Content Panel (flex-1) */}
+      <div className="flex-1 w-full bg-white border border-nura-foreground/10 rounded-2xl p-6 md:p-8 min-h-[420px] flex flex-col justify-between">
         
         {/* STEP 1: PROFIL ANAK */}
         {step === 1 && (
-          <div className="space-y-5 flex-1">
-            <div>
-              <h3 className="text-base font-extrabold text-slate-850">Profil Anak</h3>
-              <p className="text-xs text-slate-400 mt-0.5">Masukkan informasi dasar anak yang akan diperiksa</p>
-            </div>
-            
+          <div className="space-y-6 flex-1 flex flex-col justify-between">
             <div className="space-y-4">
               <div>
-                <label className="block text-[10px] font-extrabold uppercase tracking-widest text-slate-500 mb-1.5">Nama Anak</label>
-                <input 
-                  type="text" 
-                  value={patient.name} 
-                  onChange={(e) => setPatient(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-4 py-3 text-xs bg-slate-50 border border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:bg-white focus:outline-none rounded-xl text-slate-800 font-semibold" 
-                  placeholder="mis. Siti Nurhaliza" 
-                />
+                <h3 className="text-lg font-extrabold text-nura-foreground">Profil Anak</h3>
+                <p className="text-xs text-nura-muted-foreground font-medium mt-0.5">Masukkan informasi dasar anak yang akan diperiksa</p>
               </div>
-
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-[11px] font-bold uppercase tracking-widest text-nura-muted-foreground mb-2">Nama Anak</label>
+                  <input 
+                    type="text" 
+                    value={patient.name} 
+                    onChange={(e) => setPatient(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full h-[52px] px-4 py-3 text-xs bg-nura-muted border-2 border-transparent focus:border-nura-blue focus:bg-white focus:outline-none rounded-xl text-nura-foreground font-semibold" 
+                    placeholder="mis. Siti Nurhaliza" 
+                  />
+                  <div className="text-[10px] text-nura-muted-foreground font-bold mt-1.5 ml-1">Tersimpan di memori perangkat</div>
+                </div>
+
                 <div>
-                  <label className="block text-[10px] font-extrabold uppercase tracking-widest text-slate-500 mb-1.5">Usia (bulan)</label>
+                  <label className="block text-[11px] font-bold uppercase tracking-widest text-nura-muted-foreground mb-2">Usia (bulan)</label>
                   <input 
                     type="number" 
                     value={patient.age} 
                     onChange={(e) => setPatient(prev => ({ ...prev, age: e.target.value }))}
-                    className="w-full px-4 py-3 text-xs bg-slate-50 border border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:bg-white focus:outline-none rounded-xl text-slate-800 font-semibold" 
+                    className="w-full h-[52px] px-4 py-3 text-xs bg-nura-muted border-2 border-transparent focus:border-nura-blue focus:bg-white focus:outline-none rounded-xl text-nura-foreground font-semibold" 
                     placeholder="mis. 24" 
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-extrabold uppercase tracking-widest text-slate-500 mb-1.5">Jenis Kelamin</label>
+                  <label className="block text-[11px] font-bold uppercase tracking-widest text-nura-muted-foreground mb-2">Jenis Kelamin</label>
                   <div className="grid grid-cols-2 gap-2">
                     <button 
                       type="button" 
                       onClick={() => setPatient(prev => ({ ...prev, gender: 'L' }))}
-                      className={`py-3 text-xs font-bold rounded-xl border transition-all ${patient.gender === 'L' ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/10' : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-slate-600'}`}
+                      className={`h-[52px] text-xs font-bold rounded-xl border transition-all ${patient.gender === 'L' ? 'bg-nura-blue text-white border-nura-blue shadow-md shadow-nura-blue/10' : 'bg-nura-muted border-transparent text-nura-muted-foreground hover:text-nura-foreground'}`}
                     >
                       ♂ Laki-laki
                     </button>
                     <button 
                       type="button" 
                       onClick={() => setPatient(prev => ({ ...prev, gender: 'P' }))}
-                      className={`py-3 text-xs font-bold rounded-xl border transition-all ${patient.gender === 'P' ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/10' : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-slate-600'}`}
+                      className={`h-[52px] text-xs font-bold rounded-xl border transition-all ${patient.gender === 'P' ? 'bg-nura-blue text-white border-nura-blue shadow-md shadow-nura-blue/10' : 'bg-nura-muted border-transparent text-nura-muted-foreground hover:text-nura-foreground'}`}
                     >
                       ♀ Perempuan
                     </button>
@@ -277,13 +275,13 @@ export default function ScreeningPage({ onSaveHistory }) {
               </div>
             </div>
 
-            <div className="flex justify-end pt-6 border-t border-slate-100 mt-auto">
+            <div className="flex justify-end pt-6 border-t border-slate-100 mt-6">
               <button 
                 onClick={() => setStep(2)} 
                 disabled={!patient.name || !patient.age}
-                className={`px-5 py-3 text-xs font-bold rounded-xl transition-all ${(!patient.name || !patient.age) ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/15'}`}
+                className={`h-[48px] px-8 text-xs font-bold rounded-2xl transition-all ${(!patient.name || !patient.age) ? 'bg-slate-300 text-white cursor-default' : 'bg-nura-blue text-white hover:opacity-90 active:scale-[0.98]'}`}
               >
-                Lanjut ➔
+                Lanjut
               </button>
             </div>
           </div>
@@ -291,56 +289,67 @@ export default function ScreeningPage({ onSaveHistory }) {
 
         {/* STEP 2: BERAT & TINGGI */}
         {step === 2 && (
-          <div className="space-y-5 flex-1">
-            <div>
-              <h3 className="text-base font-extrabold text-slate-850">Berat & Tinggi Badan</h3>
-              <p className="text-xs text-slate-400 mt-0.5">Ukur kondisi fisik balita untuk diagnosis stunting & wasting</p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-6 flex-1 flex flex-col justify-between">
+            <div className="space-y-4">
               <div>
-                <label className="block text-[10px] font-extrabold uppercase tracking-widest text-slate-500 mb-1.5">Berat Badan (kg)</label>
-                <input 
-                  type="number" step="0.1"
-                  value={measurements.weight} 
-                  onChange={(e) => setMeasurements(prev => ({ ...prev, weight: e.target.value }))}
-                  className="w-full px-4 py-3 text-xs bg-slate-50 border border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:bg-white focus:outline-none rounded-xl text-slate-800 font-semibold" 
-                  placeholder="mis. 11.5" 
-                />
+                <h3 className="text-lg font-extrabold text-nura-foreground">Berat & Tinggi Badan</h3>
+                <p className="text-xs text-nura-muted-foreground font-medium mt-0.5">Ukur kondisi fisik balita untuk diagnosis stunting & wasting</p>
               </div>
-              <div>
-                <label className="block text-[10px] font-extrabold uppercase tracking-widest text-slate-500 mb-1.5">Tinggi Badan (cm)</label>
-                <input 
-                  type="number" step="0.5"
-                  value={measurements.height} 
-                  onChange={(e) => setMeasurements(prev => ({ ...prev, height: e.target.value }))}
-                  className="w-full px-4 py-3 text-xs bg-slate-50 border border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:bg-white focus:outline-none rounded-xl text-slate-800 font-semibold" 
-                  placeholder="mis. 85" 
-                />
-              </div>
-            </div>
-
-            {measurements.weight && measurements.height && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 bg-slate-50 border border-slate-100 rounded-xl">
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                 <div>
-                  <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">Status Gizi (BMI)</span>
-                  <span className="text-xs font-bold text-slate-700 mt-1 block">{getBMIStatus()}</span>
+                  <label className="block text-[11px] font-bold uppercase tracking-widest text-nura-muted-foreground mb-2">Berat Badan (kg)</label>
+                  <input 
+                    type="number" step="0.1"
+                    value={measurements.weight} 
+                    onChange={(e) => setMeasurements(prev => ({ ...prev, weight: e.target.value }))}
+                    className="w-full h-[52px] px-4 py-3 text-xs bg-nura-muted border-2 border-transparent focus:border-nura-blue focus:bg-white focus:outline-none rounded-xl text-nura-foreground font-semibold" 
+                    placeholder="mis. 11.5" 
+                  />
                 </div>
                 <div>
-                  <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">Indeks Tinggi Badan</span>
-                  <span className="text-xs font-bold text-slate-700 mt-1 block">{getStuntingStatus()}</span>
+                  <label className="block text-[11px] font-bold uppercase tracking-widest text-nura-muted-foreground mb-2">Tinggi Badan (cm)</label>
+                  <input 
+                    type="number" step="0.5"
+                    value={measurements.height} 
+                    onChange={(e) => setMeasurements(prev => ({ ...prev, height: e.target.value }))}
+                    className="w-full h-[52px] px-4 py-3 text-xs bg-nura-muted border-2 border-transparent focus:border-nura-blue focus:bg-white focus:outline-none rounded-xl text-nura-foreground font-semibold" 
+                    placeholder="mis. 85" 
+                  />
                 </div>
+                
+                {measurements.weight && measurements.height ? (
+                  <div className="h-[52px] px-4 bg-nura-accent rounded-xl flex items-center justify-between border border-nura-blue/20">
+                    <span className="text-[10px] uppercase font-bold text-nura-blue">Skor BMI</span>
+                    <span className="text-sm font-black text-nura-blue font-mono tracking-tight">{getBMI()}</span>
+                  </div>
+                ) : (
+                  <div className="h-[52px] px-4 bg-nura-muted rounded-xl flex items-center text-[10px] text-nura-muted-foreground font-bold">Masukkan tinggi & berat</div>
+                )}
               </div>
-            )}
 
-            <div className="flex justify-between pt-6 border-t border-slate-100 mt-auto">
-              <button onClick={() => setStep(1)} className="px-5 py-3 text-xs font-bold rounded-xl border border-slate-200 text-slate-400 hover:text-slate-600">Sebelumnya</button>
+              {measurements.weight && measurements.height && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 bg-nura-muted rounded-xl border border-nura-foreground/5 mt-4">
+                  <div>
+                    <span className="text-[10px] uppercase tracking-wider text-nura-muted-foreground font-bold block">Status Gizi (BMI)</span>
+                    <span className="text-xs font-bold text-nura-foreground mt-1 block">{getBMIStatus()}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase tracking-wider text-nura-muted-foreground font-bold block">Indeks Tinggi Badan</span>
+                    <span className="text-xs font-bold text-nura-foreground mt-1 block">{getStuntingStatus()}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-between pt-6 border-t border-slate-100 mt-6">
+              <button onClick={() => setStep(1)} className="h-[48px] px-6 text-xs font-bold rounded-2xl bg-nura-muted text-nura-muted-foreground hover:bg-slate-200/80 transition-all active:scale-[0.98]">Kembali</button>
               <button 
                 onClick={() => setStep(3)} 
                 disabled={!measurements.weight || !measurements.height}
-                className={`px-5 py-3 text-xs font-bold rounded-xl transition-all ${(!measurements.weight || !measurements.height) ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/15'}`}
+                className={`h-[48px] px-8 text-xs font-bold rounded-2xl transition-all ${(!measurements.weight || !measurements.height) ? 'bg-slate-300 text-white cursor-default' : 'bg-nura-blue text-white hover:opacity-90 active:scale-[0.98]'}`}
               >
-                Lanjut ➔
+                Lanjut
               </button>
             </div>
           </div>
@@ -351,38 +360,39 @@ export default function ScreeningPage({ onSaveHistory }) {
           <div className="space-y-6 flex-1 flex flex-col justify-between">
             <div className="space-y-4">
               <div>
-                <h3 className="text-base font-extrabold text-slate-850">Persiapan Model AI</h3>
-                <p className="text-xs text-slate-400 mt-0.5">Memuat model klasifikasi visual lokal ke memori perangkat</p>
+                <h3 className="text-lg font-extrabold text-nura-foreground">Persiapan Model AI</h3>
+                <p className="text-xs text-nura-muted-foreground font-medium mt-0.5">Memuat model klasifikasi visual lokal ke memori perangkat</p>
               </div>
 
               {loadingAI ? (
                 <div className="py-12 flex flex-col items-center justify-center space-y-4">
-                  <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                  <div className="text-xs text-slate-500 font-semibold">Mengunduh & mengoptimalkan model deteksi lokal...</div>
-                  <div className="w-64 bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-600 animate-[progress_2s_ease-in-out_infinite]" style={{width: '60%'}}></div>
+                  <div className="w-10 h-10 border-4 border-nura-blue border-t-transparent rounded-full animate-spin"></div>
+                  <div className="text-xs text-nura-muted-foreground font-semibold">Mengunduh & mengoptimalkan model deteksi lokal...</div>
+                  <div className="w-64 bg-nura-accent h-2 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-nura-blue to-nura-teal animate-[progress_2s_ease-in-out_infinite]" style={{width: '60%'}}></div>
                   </div>
+                  <div className="text-[10px] text-nura-muted-foreground font-bold">AI berjalan lokal di perangkat · Tidak perlu internet</div>
                 </div>
               ) : (
-                <div className="p-5 bg-blue-50 border border-blue-100 rounded-xl space-y-3">
-                  <h4 className="text-xs font-bold text-blue-800 flex items-center gap-2">
+                <div className="p-5 bg-nura-accent rounded-xl space-y-3 border border-nura-blue/10">
+                  <h4 className="text-xs font-bold text-nura-blue flex items-center gap-2">
                     ✓ Model AI Siap Berjalan Offline
                   </h4>
-                  <p className="text-[11px] text-blue-600 leading-relaxed font-semibold">
-                    Model pendeteksi kepucatan mata (konjungtiva) dan morfologi kuku telah berhasil dioptimalkan di browser perangkat Anda. Data foto tidak akan dikirim ke server.
+                  <p className="text-[11px] text-nura-blue/90 leading-relaxed font-semibold">
+                    Model pendeteksi kepucatan konjungtiva dan morfologi kuku telah berhasil dioptimalkan di browser perangkat Anda. Data foto tidak akan dikirim ke server.
                   </p>
                 </div>
               )}
             </div>
 
-            <div className="flex justify-between pt-6 border-t border-slate-100 mt-auto">
-              <button onClick={() => setStep(2)} disabled={loadingAI} className="px-5 py-3 text-xs font-bold rounded-xl border border-slate-200 text-slate-400 hover:text-slate-600">Sebelumnya</button>
+            <div className="flex justify-between pt-6 border-t border-slate-100 mt-6">
+              <button onClick={() => setStep(2)} disabled={loadingAI} className="h-[48px] px-6 text-xs font-bold rounded-2xl bg-nura-muted text-nura-muted-foreground hover:bg-slate-200/80 transition-all active:scale-[0.98]">Kembali</button>
               <button 
                 onClick={() => setStep(4)} 
                 disabled={loadingAI || !aiReady}
-                className={`px-5 py-3 text-xs font-bold rounded-xl transition-all ${(loadingAI || !aiReady) ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/15'}`}
+                className={`h-[48px] px-8 text-xs font-bold rounded-2xl transition-all ${(loadingAI || !aiReady) ? 'bg-slate-300 text-white cursor-default' : 'bg-nura-blue text-white hover:opacity-90 active:scale-[0.98]'}`}
               >
-                Mulai Scan ➔
+                Mulai Scan
               </button>
             </div>
           </div>
@@ -393,13 +403,13 @@ export default function ScreeningPage({ onSaveHistory }) {
           <div className="space-y-5 flex-1">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-base font-extrabold text-slate-850">Pengambilan Foto Fisik</h3>
-                <p className="text-xs text-slate-400 mt-0.5">Ambil atau unggah foto bagian fisik balita</p>
+                <h3 className="text-lg font-extrabold text-nura-foreground">Pengambilan Foto Fisik</h3>
+                <p className="text-xs text-nura-muted-foreground font-medium mt-0.5">Ambil atau pilih foto bagian fisik balita</p>
               </div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-blue-600 font-mono bg-blue-50 px-2.5 py-1 rounded-lg">Area: {currentArea.toUpperCase()}</span>
+              <span className="text-[11px] font-bold uppercase tracking-widest text-nura-blue bg-nura-accent px-3 py-1 rounded-lg">Area: {currentArea.toUpperCase()}</span>
             </div>
 
-            {/* Area toggles */}
+            {/* Area tabs */}
             <div className="grid grid-cols-3 gap-2">
               {[
                 { id: 'muka', label: 'Wajah (Muka)', desc: 'Ekspresi & gizi', icon: '👤' },
@@ -410,56 +420,59 @@ export default function ScreeningPage({ onSaveHistory }) {
                   key={a.id} 
                   type="button" 
                   onClick={() => { stopCamera(); setCurrentArea(a.id); }} 
-                  className={`p-3 rounded-xl border text-left transition-all ${currentArea === a.id ? 'bg-blue-50 border-blue-500 text-blue-700' : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-slate-600'}`}
+                  className={`p-3 rounded-xl border-2 text-left transition-all ${currentArea === a.id ? 'bg-nura-accent border-nura-blue text-nura-blue' : 'bg-nura-muted border-transparent text-nura-muted-foreground hover:text-nura-foreground'}`}
                 >
                   <div className="flex items-center justify-between font-bold text-xs">
                     <span>{a.label}</span>
                     <span>{photos[a.id] ? '✓' : a.icon}</span>
                   </div>
-                  <p className="text-[9px] text-slate-400 mt-1 leading-none font-semibold">{a.desc}</p>
+                  <p className="text-[9px] text-nura-muted-foreground mt-1 leading-none font-semibold">{a.desc}</p>
                 </button>
               ))}
             </div>
 
-            {/* Video preview / uploader container */}
-            <div className="border border-slate-200 rounded-2xl overflow-hidden bg-slate-50 min-h-60 flex flex-col items-center justify-center p-6 relative">
+            {/* Video Viewfinder (16:9 on desktop) */}
+            <div className="border border-nura-foreground/10 rounded-2xl overflow-hidden bg-slate-900 min-h-60 flex flex-col items-center justify-center p-6 relative">
               {cameraActive ? (
-                <div className="w-full max-w-sm aspect-video rounded-xl overflow-hidden border border-slate-200 relative bg-black">
+                <div className="w-full max-w-lg aspect-video rounded-xl overflow-hidden border border-slate-700 relative bg-black shadow-lg">
                   <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover transform -scale-x-100" />
-                  <div className="absolute inset-0 border-2 border-blue-500/30 rounded-xl pointer-events-none flex items-center justify-center">
-                    <div className={`w-28 h-28 border border-dashed border-blue-400/60 ${currentArea === 'muka' ? 'rounded-full' : 'rounded-lg'}`}></div>
+                  <div className="absolute inset-0 border-2 border-nura-blue/30 rounded-xl pointer-events-none flex items-center justify-center">
+                    <div className={`w-32 h-32 border-2 border-dashed border-nura-teal/85 ${currentArea === 'muka' ? 'rounded-full' : 'rounded-lg'}`}></div>
                   </div>
+                  
+                  {/* AI Glow scanning strip effect */}
+                  <div className="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-nura-blue to-nura-teal shadow-[0_0_12px_rgba(0,164,154,0.7)] animate-[scan_2s_linear_infinite]"></div>
                 </div>
               ) : photos[currentArea] ? (
-                <img src={photos[currentArea]} className="max-h-48 rounded-xl object-contain border border-slate-200 shadow-sm" alt="Preview" />
+                <img src={photos[currentArea]} className="max-h-48 rounded-xl object-contain border border-nura-foreground/10 bg-white shadow-sm" alt="Preview" />
               ) : (
-                <div className="text-center space-y-2">
-                  <span className="text-4xl">📸</span>
-                  <p className="text-xs text-slate-400 font-bold">{currentArea === 'muka' ? 'Posisikan wajah balita tepat di tengah' : currentArea === 'mata' ? 'Dekatkan kamera ke kelopak mata bawah' : 'Posisikan kuku jari si kecil secara tegak lurus'}</p>
+                <div className="text-center space-y-2 py-8 text-white">
+                  <span className="text-4xl block">📸</span>
+                  <p className="text-xs text-slate-300 font-semibold">{currentArea === 'muka' ? 'Posisikan wajah balita tepat di tengah' : currentArea === 'mata' ? 'Dekatkan kamera ke kelopak mata bawah' : 'Posisikan kuku jari si kecil secara tegak lurus'}</p>
                 </div>
               )}
 
               <div className="flex gap-2 mt-4 relative z-10">
                 <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} />
                 {cameraActive ? (
-                  <button onClick={capturePhoto} className="px-4 py-2 text-xs font-bold rounded-lg bg-blue-600 text-white hover:bg-blue-500">Ambil Foto</button>
+                  <button onClick={capturePhoto} className="h-[44px] px-6 text-xs font-bold rounded-2xl bg-white text-nura-blue border-2 border-nura-blue shadow-[0_4px_20px_rgba(27,91,232,0.25)] hover:bg-slate-50 transition-all">Ambil Foto</button>
                 ) : (
                   <>
-                    <button onClick={startCamera} className="px-4 py-2 text-xs font-bold rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50">Gunakan Kamera</button>
-                    <button onClick={() => fileInputRef.current.click()} className="px-4 py-2 text-xs font-bold rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50">Unggah Gambar</button>
+                    <button onClick={startCamera} className="h-[44px] px-6 text-xs font-bold rounded-2xl bg-white border border-nura-foreground/10 text-nura-foreground hover:bg-slate-50 transition-all">Gunakan Kamera</button>
+                    <button onClick={() => fileInputRef.current.click()} className="h-[44px] px-6 text-xs font-bold rounded-2xl bg-white border border-nura-foreground/10 text-nura-foreground hover:bg-slate-50 transition-all">Pilih Foto Perangkat</button>
                   </>
                 )}
               </div>
             </div>
 
-            <div className="flex justify-between pt-6 border-t border-slate-100 mt-auto">
-              <button onClick={() => { stopCamera(); setStep(3); }} className="px-5 py-3 text-xs font-bold rounded-xl border border-slate-200 text-slate-400 hover:text-slate-600">Sebelumnya</button>
+            <div className="flex justify-between pt-6 border-t border-slate-100 mt-6">
+              <button onClick={() => { stopCamera(); setStep(3); }} className="h-[48px] px-6 text-xs font-bold rounded-2xl bg-nura-muted text-nura-muted-foreground hover:bg-slate-200/80 transition-all active:scale-[0.98]">Kembali</button>
               <button 
                 onClick={runAnalysis}
                 disabled={!photos.muka && !photos.mata && !photos.kuku}
-                className={`px-5 py-3 text-xs font-bold rounded-xl transition-all ${(!photos.muka && !photos.mata && !photos.kuku) ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/15'}`}
+                className={`h-[48px] px-8 text-xs font-bold rounded-2xl transition-all ${(!photos.muka && !photos.mata && !photos.kuku) ? 'bg-slate-300 text-white cursor-default' : 'bg-nura-blue text-white hover:opacity-90 active:scale-[0.98]'}`}
               >
-                Mulai Analisis AI ➔
+                Mulai Analisis AI
               </button>
             </div>
           </div>
@@ -467,52 +480,58 @@ export default function ScreeningPage({ onSaveHistory }) {
 
         {/* STEP 5: HASIL SCREENING */}
         {step === 5 && (
-          <div className="space-y-5 flex-1">
+          <div className="space-y-6 flex-1 flex flex-col justify-between">
             <div>
-              <h3 className="text-base font-extrabold text-slate-850">Hasil Analisis Screening</h3>
-              <p className="text-xs text-slate-400 mt-0.5">Hasil kalkulasi parameter fisik & visual AI lokal NURA</p>
+              <h3 className="text-lg font-extrabold text-nura-foreground">Hasil Analisis Screening</h3>
+              <p className="text-xs text-nura-muted-foreground font-medium mt-0.5">Hasil kalkulasi parameter fisik & visual AI lokal NURA</p>
             </div>
 
             {analyzing ? (
               <div className="py-12 flex flex-col items-center justify-center space-y-3">
-                <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                <div className="text-xs text-slate-500 font-bold">Menganalisis foto konjungtiva mata & data gizi...</div>
+                <div className="w-10 h-10 border-4 border-nura-blue border-t-transparent rounded-full animate-spin"></div>
+                <div className="text-xs text-nura-muted-foreground font-bold">Memproses di GPU perangkat... Tidak perlu internet.</div>
               </div>
             ) : report ? (
-              <div className="space-y-4 animate-fadeIn">
-                <div className="p-4 bg-slate-50 border border-slate-150 rounded-xl space-y-4">
-                  <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <div className="space-y-4 animate-fadeIn flex-1 flex flex-col justify-between">
+                <div className="p-5 bg-white border-2 border-nura-foreground/10 rounded-2xl space-y-4">
+                  <div className="flex items-center justify-between border-b border-nura-muted pb-3.5">
                     <div>
-                      <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest block">Pasien Balita</span>
-                      <h4 className="text-sm font-bold text-slate-800 mt-0.5">{report.nama_anak} ({report.usia_bulan} bulan)</h4>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-nura-muted-foreground block">Identitas Pasien</span>
+                      <h4 className="text-sm font-extrabold text-nura-foreground mt-1">{report.nama_anak} ({report.usia_bulan} bulan)</h4>
                     </div>
-                    <span className={`px-2.5 py-1 rounded text-[10px] font-black uppercase shadow-inner ${report.level_urgensi === 'Tinggi' ? 'bg-red-50 text-red-600 border border-red-100' : report.level_urgensi === 'Sedang' ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}`}>
-                      Urgensi: {report.level_urgensi}
+                    
+                    {/* Saturated foreground + pastel background colors as per Design System §2.3 */}
+                    <span className={`px-3 py-1 rounded-full text-[11px] font-bold uppercase shadow-inner ${
+                      report.status_anemia === 'Anemia Berat' 
+                        ? 'bg-[#fee2e2] text-[#e53e3e]' 
+                        : report.status_anemia === 'Anemia Ringan' 
+                        ? 'bg-[#fef9c3] text-[#ca8a04]' 
+                        : 'bg-[#dcfce7] text-[#16a34a]'
+                    }`}>
+                      {report.status_anemia}
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 text-xs">
-                    <div>
-                      <span className="text-[9px] text-slate-400 uppercase font-bold block">Status Anemia</span>
-                      <span className={`font-bold mt-1 inline-block ${report.status_anemia === 'Normal' ? 'text-emerald-600' : report.status_anemia === 'Anemia Ringan' ? 'text-amber-500' : 'text-red-500'}`}>
-                        {report.status_anemia}
-                      </span>
+                  <div className="grid grid-cols-2 gap-4 text-xs font-semibold text-nura-muted-foreground">
+                    <div className="p-3 bg-nura-muted rounded-xl">
+                      <span className="text-[10px] uppercase font-bold text-nura-muted-foreground">Tinggi Badan</span>
+                      <span className="text-sm font-black text-nura-foreground mt-1 block font-mono">{report.tinggi_badan} cm</span>
                     </div>
-                    <div>
-                      <span className="text-[9px] text-slate-400 uppercase font-bold block">Status Stunting</span>
-                      <span className={`font-bold mt-1 inline-block ${report.status_stunting === 'Normal' ? 'text-emerald-600' : 'text-red-500'}`}>
-                        {report.status_stunting === 'Normal' ? 'Normal (Tinggi Baik)' : 'Berisiko Stunting'}
+                    <div className="p-3 bg-nura-muted rounded-xl">
+                      <span className="text-[10px] uppercase font-bold text-nura-muted-foreground">Status Stunting</span>
+                      <span className={`text-xs font-bold mt-1 block ${report.status_stunting === 'Normal' ? 'text-nura-green' : 'text-nura-red'}`}>
+                        {report.status_stunting === 'Normal' ? 'Normal (Tinggi Baik)' : 'Stunting'}
                       </span>
                     </div>
                   </div>
 
-                  <div className="border-t border-slate-200 pt-3">
-                    <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block mb-1">Rekomendasi AI NURA</span>
-                    <pre className="text-xs text-slate-600 whitespace-pre-wrap leading-relaxed font-sans font-medium">{report.catatan}</pre>
+                  <div className="border-t border-nura-muted pt-3.5">
+                    <span className="text-[10px] uppercase tracking-widest text-nura-muted-foreground font-bold block mb-1">Rekomendasi AI NURA</span>
+                    <pre className="text-xs text-nura-foreground/90 whitespace-pre-wrap leading-relaxed font-sans font-medium">{report.catatan}</pre>
                   </div>
                 </div>
 
-                <div className="flex justify-end pt-4 border-t border-slate-100">
+                <div className="flex justify-end pt-6 border-t border-slate-100 mt-6">
                   <button 
                     onClick={() => {
                       setStep(1);
@@ -521,7 +540,7 @@ export default function ScreeningPage({ onSaveHistory }) {
                       setPhotos({ muka: null, mata: null, kuku: null });
                       setReport(null);
                     }} 
-                    className="px-5 py-3 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/15"
+                    className="h-[48px] px-8 text-xs font-bold rounded-2xl bg-nura-blue text-white hover:opacity-90 active:scale-[0.98]"
                   >
                     Mulai Skrining Baru
                   </button>

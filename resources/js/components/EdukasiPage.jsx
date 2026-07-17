@@ -5,6 +5,7 @@ export default function EdukasiPage() {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedArticle, setSelectedArticle] = useState(null);
+  const [filterType, setFilterType] = useState('Semua');
   
   // Quiz states
   const [activeQuiz, setActiveQuiz] = useState(null);
@@ -42,52 +43,67 @@ export default function EdukasiPage() {
     setQuizScore(null);
   };
 
-  if (loading) return <div className="flex items-center justify-center p-12"><div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div>;
+  if (loading) return <div className="flex items-center justify-center p-12"><div className="w-8 h-8 border-3 border-nura-blue border-t-transparent rounded-full animate-spin"></div></div>;
+
+  const filteredArticles = filterType === 'Semua'
+    ? articles.filter(a => a.tipe === 'artikel')
+    : articles.filter(a => a.tipe === 'artikel' && a.kategori === filterType);
 
   return (
-    <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 border border-blue-500 p-6 md:p-8 text-white shadow-xl shadow-blue-500/10">
-        <h2 className="text-2xl md:text-3xl font-black tracking-tight flex items-center gap-3">📖 Edukasi & Literasi Orang Tua</h2>
-        <p className="text-blue-100 text-xs mt-2 max-w-2xl font-medium">Pelajari artikel gizi, penanganan anemia, pencegahan stunting balita, serta uji pemahaman Anda melalui kuis interaktif.</p>
+    <div className="space-y-6 max-w-6xl mx-auto w-full">
+      {/* Brand Gradient Banner */}
+      <div 
+        className="relative overflow-hidden rounded-[24px] p-6 md:p-8 text-white shadow-none"
+        style={{ background: 'linear-gradient(135deg, #1b5be8 0%, #0f3fa3 100%)' }}
+      >
+        <div className="text-[11px] font-bold uppercase tracking-widest text-blue-200">Hub Literasi</div>
+        <h2 className="text-2xl md:text-[28px] font-extrabold tracking-tight mt-1">Edukasi & Literasi Orang Tua</h2>
+        <p className="text-blue-100 text-xs mt-2 max-w-2xl font-medium">Pelajari gizi anak, MPASI sehat, pencegahan stunting, serta uji pemahaman Anda.</p>
       </div>
 
       {selectedArticle ? (
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 animate-fadeIn">
-          <button onClick={() => setSelectedArticle(null)} className="px-3.5 py-2 text-xs font-bold rounded-xl border border-slate-200 text-slate-500 hover:text-slate-700 bg-white hover:bg-slate-50 transition-all">
-            ← Kembali ke Artikel
-          </button>
-          <div className="border-b border-slate-100 pb-3 mt-2">
-            <span className="px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase bg-blue-50 text-blue-600 border border-blue-100">{selectedArticle.kategori}</span>
-            <h3 className="text-lg font-black text-slate-800 mt-2">{selectedArticle.judul}</h3>
-          </div>
-          <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-wrap font-medium">{selectedArticle.konten}</p>
-        </div>
-      ) : activeQuiz ? (
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 animate-fadeIn">
-          <button onClick={() => setActiveQuiz(null)} className="px-3.5 py-2 text-xs font-bold rounded-xl border border-slate-200 text-slate-500 hover:text-slate-700 bg-white hover:bg-slate-50 transition-all">
+        <div className="bg-white border border-nura-foreground/10 rounded-2xl p-6 space-y-4 animate-fadeIn">
+          <button 
+            onClick={() => setSelectedArticle(null)} 
+            className="h-[44px] px-6 text-xs font-bold rounded-2xl bg-nura-muted text-nura-muted-foreground hover:bg-slate-200/80 transition-all active:scale-[0.98]"
+          >
             ← Kembali
           </button>
-          <div className="border-b border-slate-100 pb-3 mt-2">
-            <h3 className="text-base font-black text-slate-800">📝 Kuis Pemahaman Kesehatan Anak</h3>
-            <p className="text-xs text-slate-400 mt-1">Uji pemahaman Anda seputar tumbuh kembang emas balita.</p>
+          <div className="border-b border-nura-muted pb-3.5 mt-2">
+            <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-nura-accent text-nura-blue border border-nura-blue/15">{selectedArticle.kategori}</span>
+            <h3 className="text-lg font-extrabold text-nura-foreground mt-2.5">{selectedArticle.judul}</h3>
+          </div>
+          <p className="text-xs text-nura-foreground/80 leading-relaxed whitespace-pre-wrap font-semibold">{selectedArticle.konten}</p>
+        </div>
+      ) : activeQuiz ? (
+        <div className="bg-white border border-nura-foreground/10 rounded-2xl p-6 space-y-4 animate-fadeIn">
+          <button 
+            onClick={() => setActiveQuiz(null)} 
+            className="h-[44px] px-6 text-xs font-bold rounded-2xl bg-nura-muted text-nura-muted-foreground hover:bg-slate-200/80 transition-all active:scale-[0.98]"
+          >
+            ← Kembali
+          </button>
+          <div className="border-b border-nura-muted pb-3 mt-2">
+            <h3 className="text-base font-bold text-nura-foreground">Kuis Pemahaman Kesehatan Anak</h3>
+            <p className="text-xs text-nura-muted-foreground mt-1 font-semibold">Tersimpan di memori perangkat</p>
           </div>
 
           <div className="space-y-4">
             {activeQuiz.quiz_data.map((q, idx) => (
-              <div key={idx} className="p-4 bg-slate-50 border border-slate-100 rounded-xl space-y-3">
-                <div className="text-xs font-bold text-slate-800">{idx + 1}. {q.question}</div>
+              <div key={idx} className="p-4 bg-nura-muted border border-nura-foreground/5 rounded-xl space-y-3">
+                <div className="text-xs font-bold text-nura-foreground">{idx + 1}. {q.question}</div>
                 <div className="grid grid-cols-1 gap-2">
                   {q.options.map((opt, oi) => {
                     const isSelected = quizAnswers[idx] === oi;
-                    let btnStyle = 'bg-white border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50';
+                    let btnStyle = 'bg-white border-nura-foreground/10 text-nura-muted-foreground hover:bg-slate-50 hover:text-nura-foreground';
                     if (quizSubmitted) {
                       if (oi === q.correct) {
-                        btnStyle = 'bg-emerald-50 border-emerald-500 text-emerald-700 font-bold';
+                        btnStyle = 'bg-[#dcfce7] border-[#16a34a] text-[#16a34a] font-bold';
                       } else if (isSelected) {
-                        btnStyle = 'bg-red-50 border-red-500 text-red-700 font-bold';
+                        btnStyle = 'bg-[#fee2e2] border-[#e53e3e] text-[#e53e3e] font-bold';
                       }
                     } else if (isSelected) {
-                      btnStyle = 'bg-blue-600 border-blue-600 text-white font-black';
+                      btnStyle = 'bg-nura-blue border-nura-blue text-white font-extrabold';
                     }
                     
                     return (
@@ -110,49 +126,71 @@ export default function EdukasiPage() {
             <button 
               onClick={() => submitQuiz(activeQuiz.quiz_data)} 
               disabled={Object.keys(quizAnswers).length < activeQuiz.quiz_data.length}
-              className={`w-full py-3.5 text-xs font-bold rounded-xl transition-all ${Object.keys(quizAnswers).length < activeQuiz.quiz_data.length ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500 text-white font-black shadow-lg shadow-blue-500/15'}`}
+              className={`w-full h-[48px] text-xs font-bold rounded-2xl transition-all ${Object.keys(quizAnswers).length < activeQuiz.quiz_data.length ? 'bg-slate-350 text-white cursor-default' : 'bg-nura-blue text-white hover:opacity-90 active:scale-[0.98]'}`}
             >
               Kirim Jawaban
             </button>
           ) : (
-            <div className="p-5 bg-slate-50 border border-slate-150 rounded-xl text-center space-y-2.5 animate-fadeIn">
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-450 block">Skor Evaluasi Kuis</span>
-              <div className="text-3xl font-black font-mono text-blue-600">{quizScore}%</div>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto font-medium">
+            <div className="p-5 bg-nura-muted rounded-2xl text-center space-y-3.5 animate-fadeIn">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-nura-muted-foreground block">Skor Evaluasi Kuis</span>
+              <div className="text-3xl font-black font-mono text-nura-blue">{quizScore}%</div>
+              <p className="text-xs text-nura-muted-foreground max-w-sm mx-auto font-semibold">
                 {quizScore >= 80 ? 'Hebat! Anda memiliki pemahaman yang matang mengenai asupan gizi pencegah anemia dan stunting anak.' : 'Kami merekomendasikan Anda untuk membaca kembali materi edukasi di atas agar pemantauan si kecil semakin optimal.'}
               </p>
-              <button onClick={() => startQuiz(activeQuiz)} className="mt-2 px-4 py-2 text-xs font-bold rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600">Ulangi Kuis</button>
+              <button onClick={() => startQuiz(activeQuiz)} className="mt-2 px-4 py-2.5 text-xs font-bold rounded-xl border border-nura-foreground/10 bg-white text-nura-foreground hover:bg-slate-50 transition-all">Ulangi Kuis</button>
             </div>
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2 space-y-4">
-            <h3 className="text-sm font-extrabold text-slate-800 mb-2">Artikel Edukasi Balita</h3>
-            {articles.filter(a => a.tipe === 'artikel').map(a => (
-              <div key={a.id} className="p-5 bg-white border border-slate-200 rounded-2xl flex flex-col justify-between hover:border-slate-300 transition-all shadow-sm">
-                <div>
-                  <span className="px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase bg-blue-50 text-blue-600 border border-blue-100">{a.kategori}</span>
-                  <h4 className="text-sm font-extrabold text-slate-800 mt-3">{a.judul}</h4>
-                  <p className="text-xs text-slate-450 mt-1.5 font-medium leading-relaxed">{a.ringkasan}</p>
-                </div>
-                <button onClick={() => setSelectedArticle(a)} className="text-xs text-blue-600 hover:text-blue-500 font-extrabold self-start mt-4 flex items-center gap-1">
-                  Baca Selengkapnya ➔
-                </button>
-              </div>
+        <div className="space-y-6">
+          {/* Tab Filter Chips (Design System §6.6 / §6.14) */}
+          <div className="flex flex-wrap gap-2 p-1.5 bg-nura-muted border border-nura-foreground/5 rounded-full w-max">
+            {['Semua', 'Gizi & Tumbuh Kembang', 'Nutrisi Anak'].map(type => (
+              <button
+                key={type}
+                onClick={() => setFilterType(type)}
+                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${filterType === type ? 'bg-white text-nura-blue shadow-sm' : 'text-nura-muted-foreground hover:text-nura-foreground'}`}
+              >
+                {type}
+              </button>
             ))}
           </div>
 
-          <div className="space-y-6">
-            <h3 className="text-sm font-extrabold text-slate-800 mb-2">Evaluasi Interaktif</h3>
-            {articles.filter(a => a.tipe === 'kuis').map(a => (
-              <div key={a.id} className="p-5 bg-white border border-slate-200 rounded-2xl space-y-4 text-center shadow-sm">
-                <span className="text-3xl block">📝</span>
-                <h4 className="text-sm font-bold text-slate-800">Kuis Kesiapan Kesehatan Anak</h4>
-                <p className="text-xs text-slate-450 leading-relaxed font-semibold">Uji tingkat kepedulian & pemahaman tumbuh kembang emas.</p>
-                <button onClick={() => startQuiz(a)} className="w-full py-2.5 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black shadow-md shadow-blue-500/10 transition-all">Mulai Kuis</button>
-              </div>
-            ))}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Desktop Articles Grid (grid-cols-3 if standalone, or grid-cols-2) */}
+            <div className="lg:col-span-2 space-y-4">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-nura-muted-foreground mb-3">Artikel Edukasi</h3>
+              {filteredArticles.map(a => (
+                <div key={a.id} className="p-5 bg-white border border-nura-foreground/10 rounded-2xl flex flex-col justify-between hover:border-nura-blue/20 hover:shadow-md transition-all">
+                  <div>
+                    <span className="px-3 py-1 rounded-full text-[9px] font-bold uppercase bg-nura-accent text-nura-blue border border-nura-blue/15">{a.kategori}</span>
+                    <h4 className="text-sm font-extrabold text-nura-foreground mt-3">{a.judul}</h4>
+                    <p className="text-xs text-nura-muted-foreground mt-1.5 font-semibold leading-relaxed">{a.ringkasan}</p>
+                  </div>
+                  <button onClick={() => setSelectedArticle(a)} className="text-xs text-nura-blue hover:opacity-80 font-bold self-start mt-4 flex items-center gap-1">
+                    Baca Artikel ➔
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Quiz side cards */}
+            <div className="space-y-6">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-nura-muted-foreground mb-3">Evaluasi Mandiri</h3>
+              {articles.filter(a => a.tipe === 'kuis').map(a => (
+                <div key={a.id} className="p-5 bg-white border border-nura-foreground/10 rounded-2xl space-y-4 text-center shadow-sm">
+                  <span className="text-3xl block">📝</span>
+                  <h4 className="text-sm font-extrabold text-nura-foreground">Kuis Kesiapan Kesehatan Anak</h4>
+                  <p className="text-xs text-nura-muted-foreground leading-relaxed font-semibold">Uji tingkat kepedulian & pemahaman tumbuh kembang emas.</p>
+                  <button 
+                    onClick={() => startQuiz(a)} 
+                    className="w-full h-[48px] text-xs font-bold rounded-2xl bg-nura-blue hover:opacity-90 text-white font-bold transition-all shadow-md shadow-nura-blue/10"
+                  >
+                    Mulai Kuis
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

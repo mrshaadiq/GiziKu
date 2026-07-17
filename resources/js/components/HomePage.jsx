@@ -1,7 +1,7 @@
 import React from 'react';
 
 export default function HomePage({ history, onTabChange }) {
-  const recent = history.slice(0, 5);
+  const recent = history.slice(0, 6);
 
   const stats = {
     total: history.length,
@@ -11,97 +11,109 @@ export default function HomePage({ history, onTabChange }) {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Welcome Banner */}
-      <div>
-        <div className="text-xs font-black text-slate-400 font-mono">Jumat, 17 Juli 2026</div>
-        <h2 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight mt-1">Halo, Orang Tua! 👋</h2>
-        <p className="text-slate-400 text-xs mt-1.5 font-semibold">Pantau tumbuh kembang dan kesehatan si kecil dari satu tempat.</p>
+    <div className="space-y-6 max-w-6xl mx-auto w-full">
+      {/* Header Row (Greeting Left + AI Status Card Right) */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <div className="text-[11px] font-bold uppercase tracking-widest text-nura-muted-foreground">Dashboard Pemantauan</div>
+          <h2 className="text-2xl md:text-[28px] font-extrabold text-nura-foreground tracking-tight mt-1">Halo, Orang Tua! 👋</h2>
+          <p className="text-nura-muted-foreground text-xs font-semibold mt-1">Pantau tumbuh kembang dan kesehatan si kecil dari satu tempat.</p>
+        </div>
+        
+        {/* AI Status Card (Right) */}
+        <div className="p-3.5 bg-[#e8f5f4] rounded-xl flex items-center gap-2.5 text-[#2d6b66] border border-nura-teal/10">
+          <span className="w-2.5 h-2.5 rounded-full bg-nura-teal animate-pulse shrink-0"></span>
+          <div className="text-xs font-bold leading-none">
+            Offline Engine Active
+            <span className="block text-[9px] text-[#2d6b66]/85 font-medium mt-1">AI berjalan lokal di perangkat</span>
+          </div>
+        </div>
       </div>
 
-      {/* 4 Stats Cards */}
+      {/* 4 Stats Cards (Desktop grid-cols-4) */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Total Pemeriksaan', val: stats.total, icon: '📈', color: 'text-blue-600 bg-blue-50 border-blue-100' },
-          { label: 'Perlu Tindak Lanjut', val: stats.needsFollowUp, icon: '⚠️', color: 'text-rose-600 bg-rose-50 border-rose-100' },
-          { label: 'Faskes Tersedia', val: stats.faskes, icon: '🏥', color: 'text-emerald-600 bg-emerald-50 border-emerald-100' },
-          { label: 'Artikel Edukasi', val: stats.articles, icon: '📖', color: 'text-amber-600 bg-amber-50 border-amber-100' }
+          { label: 'Total Pemeriksaan', val: stats.total, icon: '📈', color: 'text-nura-blue bg-nura-accent border-nura-blue/15' },
+          { label: 'Perlu Tindak Lanjut', val: stats.needsFollowUp, icon: '⚠️', color: 'text-nura-red bg-[#fee2e2] border-nura-red/15' },
+          { label: 'Faskes Tersedia', val: stats.faskes, icon: '🏥', color: 'text-nura-green bg-[#dcfce7] border-nura-green/15' },
+          { label: 'Artikel Edukasi', val: stats.articles, icon: '📖', color: 'text-nura-yellow bg-[#fffbeb] border-nura-yellow/15' }
         ].map((s, idx) => (
-          <div key={idx} className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 border ${s.color}`}>
+          <div key={idx} className="p-4 bg-white border border-nura-foreground/10 rounded-2xl flex items-center gap-3 shadow-none hover:shadow-md transition-shadow">
+            <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 border ${s.color}`}>
               {s.icon}
             </div>
             <div>
-              <div className="text-[10px] text-slate-400 font-bold leading-none">{s.label}</div>
-              <div className="text-lg md:text-xl font-black text-slate-800 font-mono mt-1 leading-none">{s.val}</div>
+              <div className="text-[10px] text-nura-muted-foreground font-bold leading-none uppercase tracking-wider">{s.label}</div>
+              <div className="text-lg md:text-xl font-extrabold text-nura-foreground font-mono mt-1.5 leading-none tracking-tight">{s.val}</div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Main split grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Feature Area (Desktop grid-cols-5: 3fr Left + 2fr Right) */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         
-        {/* Left Side: Screening Banner & Shortcuts */}
-        <div className="lg:col-span-2 space-y-4">
+        {/* Left Side (3fr Column) */}
+        <div className="lg:col-span-3 space-y-4">
           
-          {/* Large Screening Card */}
+          {/* Large Gradient Screening Card (Linear Blue-Teal Gradient) */}
           <div 
             onClick={() => onTabChange('screening')}
-            className="p-6 bg-gradient-to-r from-blue-600 to-teal-500 rounded-3xl text-white shadow-xl shadow-blue-500/10 cursor-pointer hover:shadow-2xl hover:scale-[1.01] transition-all flex items-center justify-between relative overflow-hidden"
+            className="p-6 rounded-[24px] text-white shadow-none hover:shadow-lg cursor-pointer hover:scale-[1.005] transition-all flex items-center justify-between relative overflow-hidden"
+            style={{ background: 'linear-gradient(135deg, #1b5be8 0%, #00a49a 100%)' }}
           >
-            <div className="space-y-3 z-10 max-w-[80%]">
-              <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-xl">📸</div>
-              <h3 className="text-lg md:text-xl font-black tracking-tight mt-3">Screening Kesehatan Anak</h3>
+            <div className="space-y-3 z-10 max-w-[85%]">
+              <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-xl border border-white/10">📸</div>
+              <h3 className="text-xl font-extrabold tracking-tight mt-3">Screening Kesehatan Anak</h3>
               <div className="flex gap-1.5">
                 {['Fisik', 'Gizi', 'Mental'].map((t, idx) => (
-                  <span key={idx} className="px-2 py-0.5 rounded bg-white/20 text-[9px] font-black uppercase tracking-wider">{t}</span>
+                  <span key={idx} className="px-2.5 py-0.5 rounded-full bg-white/20 text-[9px] font-black uppercase tracking-wider">{t}</span>
                 ))}
               </div>
-              <p className="text-[10px] text-blue-50/80 leading-relaxed font-semibold">
-                Analisis AI berbasis kamera · Berjalan sepenuhnya di perangkat · Hasil instan tanpa internet
+              <p className="text-[10px] text-blue-50/95 leading-relaxed font-semibold">
+                AI berjalan lokal di perangkat · Tidak perlu internet · Hasil instan
               </p>
             </div>
             
-            <div className="text-2xl font-black text-white/40 shrink-0">➔</div>
+            <div className="text-2xl font-black text-white/35 shrink-0 px-4">➔</div>
           </div>
 
-          {/* 2 Smaller Shortcuts Cards */}
+          {/* 2 Smaller Shortcuts (grid-cols-2) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div 
               onClick={() => onTabChange('education')}
-              className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm hover:border-slate-300 cursor-pointer transition-all flex flex-col justify-between"
+              className="p-5 bg-white border border-nura-foreground/10 rounded-2xl flex flex-col justify-between hover:border-nura-blue/20 hover:shadow-md cursor-pointer transition-all"
             >
               <div className="space-y-2">
                 <span className="text-xl">📖</span>
-                <h4 className="text-xs font-bold text-slate-800">Edukasi & Literasi</h4>
-                <p className="text-[10px] text-slate-400 font-semibold leading-relaxed">6 artikel tentang gizi dan kesehatan mental anak</p>
+                <h4 className="text-xs font-bold text-nura-foreground">Edukasi & Literasi</h4>
+                <p className="text-[10px] text-nura-muted-foreground font-semibold leading-relaxed">6 artikel tentang gizi dan kesehatan mental anak</p>
               </div>
-              <span className="text-[10px] text-blue-600 hover:text-blue-500 font-black mt-4 inline-block">Jelajah Materi ➔</span>
+              <span className="text-[10px] text-nura-blue font-extrabold mt-4 inline-block">Jelajah Materi ➔</span>
             </div>
 
             <div 
               onClick={() => onTabChange('facilities')}
-              className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm hover:border-slate-300 cursor-pointer transition-all flex flex-col justify-between"
+              className="p-5 bg-white border border-nura-foreground/10 rounded-2xl flex flex-col justify-between hover:border-nura-teal/20 hover:shadow-md cursor-pointer transition-all"
             >
               <div className="space-y-2">
                 <span className="text-xl">🏥</span>
-                <h4 className="text-xs font-bold text-slate-800">Faskes Terdekat</h4>
-                <p className="text-[10px] text-slate-400 font-semibold leading-relaxed">4 fasilitas kesehatan ditemukan di sekitar Anda</p>
+                <h4 className="text-xs font-bold text-nura-foreground">Faskes Terdekat</h4>
+                <p className="text-[10px] text-nura-muted-foreground font-semibold leading-relaxed">4 fasilitas kesehatan ditemukan di sekitar Anda</p>
               </div>
-              <span className="text-[10px] text-emerald-600 hover:text-emerald-500 font-black mt-4 inline-block">Lihat Faskes ➔</span>
+              <span className="text-[10px] text-nura-teal font-extrabold mt-4 inline-block">Lihat Faskes ➔</span>
             </div>
           </div>
 
         </div>
 
-        {/* Right Side: Recent History List */}
-        <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h3 className="text-xs font-black text-slate-800">Riwayat Terbaru</h3>
+        {/* Right Side (2fr Column: Recent History List) */}
+        <div className="lg:col-span-2 p-5 bg-white border border-nura-foreground/10 rounded-2xl space-y-4">
+          <div className="flex items-center justify-between border-b border-nura-muted pb-3.5">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-nura-muted-foreground">Riwayat Terbaru</h3>
             <button 
               onClick={() => onTabChange('history')}
-              className="text-[10px] font-black text-blue-600 hover:text-blue-500"
+              className="text-[11px] font-bold text-nura-blue hover:opacity-80 transition-opacity"
             >
               Lihat Semua
             </button>
@@ -111,21 +123,31 @@ export default function HomePage({ history, onTabChange }) {
             {recent.map(r => (
               <div 
                 key={r.id} 
-                className="flex items-center justify-between gap-3 text-xs border-b border-slate-50 pb-3 last:border-0 last:pb-0"
+                className="flex items-center justify-between gap-3 text-xs border-b border-nura-muted/50 pb-3 last:border-0 last:pb-0"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center font-bold text-slate-400 text-[10px]">👶</div>
+                  <div className="w-8 h-8 rounded-full bg-nura-muted flex items-center justify-center font-bold text-nura-muted-foreground text-[10px]">👶</div>
                   <div>
-                    <div className="font-extrabold text-slate-800">{r.nama_anak}</div>
-                    <div className="text-[9px] text-slate-400 font-bold leading-none mt-0.5">{r.usia_bulan} bln · {r.tanggal}</div>
+                    <div className="font-bold text-nura-foreground">{r.nama_anak}</div>
+                    <div className="text-[9px] text-nura-muted-foreground font-semibold leading-none mt-0.5">{r.usia_bulan} bln · {r.tanggal}</div>
                   </div>
                 </div>
                 
-                <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase shrink-0 shadow-inner ${r.status_anemia === 'Anemia Berat' ? 'bg-red-50 text-red-600 border border-red-100' : r.status_anemia === 'Anemia Ringan' ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}`}>
+                {/* Saturated colors + pastel background based on Design System §2.3 */}
+                <span className={`px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase shrink-0 shadow-inner ${
+                  r.status_anemia === 'Anemia Berat' 
+                    ? 'bg-[#fee2e2] text-[#e53e3e]' 
+                    : r.status_anemia === 'Anemia Ringan' 
+                    ? 'bg-[#fef9c3] text-[#ca8a04]' 
+                    : 'bg-[#dcfce7] text-[#16a34a]'
+                }`}>
                   {r.status_anemia}
                 </span>
               </div>
             ))}
+            {recent.length === 0 && (
+              <div className="text-center py-8 text-xs text-nura-muted-foreground font-medium">Belum ada riwayat terdaftar.</div>
+            )}
           </div>
         </div>
 
